@@ -1,0 +1,50 @@
+#PWD Specifies the full path leading to the directory containing the current file being parsed. This can be useful to refer to files within the source tree when writing project files to support shadow builds.
+#Contains the path to the project file in use.
+#For example, the following line causes the location of the project file to be written to the console:
+#  message($$_PRO_FILE_)
+
+TEMP_DIR=$$_PRO_FILE_PWD_/TEMP
+
+macx: PLATEFORM_NAME = "mac"
+else:win32: PLATEFORM_NAME = "win"
+else:linux-*: PLATEFORM_NAME = "linux-$${ARCHITECTURE}"
+else: PLATEFORM_NAME = "unknown"
+
+
+DEBUG_RELEASE_NAME=release
+DEBUG_RELEASE_SUBFIX=
+CONFIG(debug, debug|release) {
+    DEBUG_RELEASE_NAME=debug
+    DEBUG_RELEASE_SUBFIX=d
+}
+
+OBJECTS_DIR = $$TEMP_DIR/$${DEBUG_RELEASE_NAME}/$${TARGET}/obj
+MOC_DIR = $$TEMP_DIR/$${DEBUG_RELEASE_NAME}/$${TARGET}/moc
+UI_DIR = $$TEMP_DIR/$${DEBUG_RELEASE_NAME}/$${TARGET}/ui
+RCC_DIR = $$TEMP_DIR/$${DEBUG_RELEASE_NAME}/$${TARGET}/rcc
+
+C_OUT_ROOT_PATH_NAME=lib
+
+message( "TEMPLATE=$${TEMPLATE}" )
+
+equals( TEMPLATE, "lib" ) {
+    DESTDIR = $$_PRO_FILE_PWD_/lib/$${PLATEFORM_NAME}/$${DEBUG_RELEASE_NAME}
+}
+equals( TEMPLATE, "app" ) {
+mac{
+    DESTDIR = $$_PRO_FILE_PWD_/$${DEBUG_RELEASE_NAME}
+}
+win32{
+    DESTDIR = $$_PRO_FILE_PWD_/bin
+}
+}
+
+ TARGET = $$join(TARGET,,,$${DEBUG_RELEASE_SUBFIX})
+
+
+ message( "OBJECTS_DIR=$${OBJECTS_DIR}" )
+ message( "MOC_DIR=$${MOC_DIR}" )
+ message( "UI_DIR=$${UI_DIR}" )
+ message( "DESTDIR=$${DESTDIR}" )
+ message( "TARGET=$${TARGET}" )
+
