@@ -9,6 +9,7 @@
 #include "LiveRoom-IM.h"
 
 
+
 static unsigned long g_dwAppID2 = 4133572644;
 static unsigned char g_bufSignKey_Udp[] =
 {
@@ -22,6 +23,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
   ,m_pAVSignal(NULL)
+  ,m_videoCaptureFactoryGlue(NULL)
   ,m_init(false)
   ,m_login(false)
   ,m_push(false)
@@ -55,6 +57,14 @@ bool MainWindow::initSDK()
 
     // 测试环境开关
     LIVEROOM::SetUseTestEnv(true);
+
+    if(m_videoCaptureFactoryGlue == NULL)
+    {
+        m_videoCaptureFactoryGlue = new VideoCaptureFactoryGlue;
+    }
+
+    LIVEROOM::SetVideoCaptureFactory(m_videoCaptureFactoryGlue);
+
 
     // 设置 UserID 和 UserName。
     LIVEROOM::SetUser(userId.toLocal8Bit().data(), username.toLocal8Bit().data());

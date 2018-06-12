@@ -27,7 +27,7 @@ include(./zego/zego.pri)
 INCLUDEPATH += ./ljlive
 INCLUDEPATH += ./Model
 INCLUDEPATH += ./Signal
-#INCLUDEPATH += ./Module
+INCLUDEPATH += ./VideoCapture
 
 
 SOURCES += main.cpp\
@@ -40,7 +40,9 @@ SOURCES += main.cpp\
     Model/ZegoRoomMsgModel.cpp \
     Model/ZegoStreamModel.cpp \
     Model/ZegoUserModel.cpp \
-    Signal/ZegoSDKSignal.cpp
+    Signal/ZegoSDKSignal.cpp \
+    VideoCapture/ZegoVideoCaptureDeviceDemo.cpp \
+    VideoCapture/ZegoVideoCaptureFactoryDemo.cpp
 
 HEADERS  += mainwindow.h \
     ljlive/ljlivepublishercallback.h \
@@ -51,6 +53,8 @@ HEADERS  += mainwindow.h \
     Model/ZegoRoomMsgModel.h \
     Model/ZegoStreamModel.h \
     Model/ZegoUserModel.h \
-    Signal/ZegoSDKSignal.h
+    Signal/ZegoSDKSignal.h \
+    VideoCapture/ZegoVideoCaptureDeviceDemo.h \
+    VideoCapture/ZegoVideoCaptureFactoryDemo.h
 
 FORMS    += mainwindow.ui

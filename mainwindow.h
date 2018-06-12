@@ -4,6 +4,9 @@
 #include <QMainWindow>
 #include "ZegoSDKSignal.h"
 
+#include "VideoCapture/ZegoVideoCaptureDeviceDemo.h"
+#include "VideoCapture/ZegoVideoCaptureFactoryDemo.h"
+
 namespace Ui {
 class MainWindow;
 }
@@ -61,6 +64,7 @@ private:
 private:
     Ui::MainWindow *ui;
     QZegoAVSignal *m_pAVSignal;
+    VideoCaptureFactoryGlue *m_videoCaptureFactoryGlue;
     bool m_init;
     bool m_login;
     bool m_push;
