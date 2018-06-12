@@ -25,6 +25,8 @@ bool g_useTestEnv = true;
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    av_register_all();
+
     MainWindow w;
     w.show();
     w.initSDK();

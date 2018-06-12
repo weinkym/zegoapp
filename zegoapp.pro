@@ -24,6 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 include(cglobal.prf)
 include(./zego/zego.pri)
+include(ffmpeg.pri)
 INCLUDEPATH += ./ljlive
 INCLUDEPATH += ./Model
 INCLUDEPATH += ./Signal

@@ -15,6 +15,25 @@
 
 using namespace AVE;
 
+
+extern "C"
+{
+    #include "libavcodec/avcodec.h"
+    #include "libavformat/avformat.h"
+    #include <libavutil/time.h>
+    #include "libavutil/pixfmt.h"
+    #include "libswscale/swscale.h"
+    #include "libswresample/swresample.h"
+}
+
+struct LJVideoData{
+    LJVideoData():pFormatCtx(NULL),pCodecCtx(NULL),pCodec(NULL),videoStream(-1){};
+    AVFormatContext *pFormatCtx;
+    AVCodecContext *pCodecCtx;
+    AVCodec *pCodec;
+    int videoStream;
+};
+
 class VideoCaptureDeviceGlue;
 class LJIncomingCapturedDataThread : public QThread
 {
@@ -27,8 +46,16 @@ protected:
     void run();
 
 private:
+    void initVideo();
+
+    void sendImage();
+
+    void sendFrame();
+
+private:
     VideoCaptureDeviceGlue *m_device;
     QImage m_image;
+    LJVideoData m_videoData;
 };
 
 
