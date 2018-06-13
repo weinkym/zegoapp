@@ -8,7 +8,7 @@
 #include "LiveRoom-Player.h"
 #include "LiveRoom-IM.h"
 
-
+#include <QMessageBox>
 
 static unsigned long g_dwAppID2 = 4133572644;
 static unsigned char g_bufSignKey_Udp[] =
@@ -51,6 +51,7 @@ bool MainWindow::initSDK()
         connect(m_pAVSignal,SIGNAL(sigInitSDK(int)),this,SLOT(onInitSDK(int)));
         connect(m_pAVSignal,SIGNAL(sigLoginRoom(int,QString,QVector<StreamPtr>)),this,SLOT(onLoginRoom(int,QString,QVector<StreamPtr>)));
         connect(m_pAVSignal,SIGNAL(sigPublishStateUpdate(int,QString,StreamPtr)),this,SLOT(onPublishStateUpdate(int,QString,StreamPtr)));
+        connect(m_pAVSignal,SIGNAL(sigJoinLiveRequest(int,QString,QString,QString)),this,SLOT(onJoinLiveRequest(int,QString,QString,QString)));
     }
     QString userId = "yxtuserid";
     QString username = "mzw";
@@ -95,10 +96,15 @@ void MainWindow::on_pushButtonStart_clicked()
     {
         return;
     }
-//    LIVEROOM::SetVideoFPS(m_pAVSettings->GetFps());
-//    LIVEROOM::SetVideoBitrate(m_pAVSettings->GetBitrate());
-//    LIVEROOM::SetVideoCaptureResolution(m_pAVSettings->GetResolution().cx, m_pAVSettings->GetResolution().cy);
-//    LIVEROOM::SetVideoEncodeResolution(m_pAVSettings->GetResolution().cx, m_pAVSettings->GetResolution().cy);
+    int fps = 30;
+//    int bitrate = ;
+
+    int v_w = 320;
+    int v_h = 568;
+    LIVEROOM::SetVideoFPS(fps);
+//    LIVEROOM::SetVideoBitrate(1024);
+    LIVEROOM::SetVideoCaptureResolution(v_w, v_h);
+    LIVEROOM::SetVideoEncodeResolution(v_w, v_h);
 
     //配置View
 //    LIVEROOM::SetPreviewView((void *)AVViews.last()->winId());
@@ -151,6 +157,20 @@ void MainWindow::onPublishStateUpdate(int stateCode, const QString &streamId, St
 //    C_VALUE_LOG_INFO(streamInfo);
 
     m_push = (stateCode == 0);
+}
+
+void MainWindow::onJoinLiveRequest(int seq, const QString &fromUserId, const QString &fromUserName, const QString &roomId)
+{
+    QMessageBox box(QMessageBox::Warning, tr("提示"), QString(tr("%1正在请求连麦")).arg(fromUserId));
+    box.setStandardButtons(QMessageBox::Ok | QMessageBox::Cancel);
+    if (box.exec() == QMessageBox::Ok)
+    {
+        LIVEROOM::RespondJoinLiveReq(seq, 0);
+    }
+    else
+    {
+        LIVEROOM::RespondJoinLiveReq(seq, -1);
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

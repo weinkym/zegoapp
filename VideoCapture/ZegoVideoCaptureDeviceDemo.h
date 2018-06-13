@@ -12,6 +12,7 @@
 #include <QPainter>
 #include <QFont>
 #include <QPen>
+#include <QFile>
 
 using namespace AVE;
 

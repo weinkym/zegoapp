@@ -40,7 +40,7 @@ private slots:
 //    void onPublishQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
 //    void onPlayQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
 //    void onAuxInput(unsigned char* pData, int* pDataLen, int pDataLenValue, int* pSampleRate, int* pNumChannels);
-//    void onJoinLiveRequest(int seq, const QString& fromUserId, const QString& fromUserName, const QString& roomId);
+    void onJoinLiveRequest(int seq, const QString& fromUserId, const QString& fromUserName, const QString& roomId);
 //    void onJoinLiveResponse(int result, const QString& fromUserId, const QString& fromUserName, int seq);
 //    void onAudioDeviceChanged(AV::AudioDeviceType deviceType, const QString& strDeviceId, const QString& strDeviceName, AV::DeviceState state);
 //    void onVideoDeviceChanged(const QString& strDeviceId, const QString& strDeviceName, AV::DeviceState state);

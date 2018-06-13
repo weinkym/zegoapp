@@ -174,8 +174,8 @@ void LJIncomingCapturedDataThread::initVideo()
     unsigned version = avcodec_version();
     qDebug() << "version is:" << version;
     AVFormatContext *pFormatCtx = avformat_alloc_context();
-//    m_filePath = "C:\\Users\\miao\\Videos\\test.mp4";
-    char file_path[] = "C:\\Users\\miao\\Videos\\test.mp4";
+//    m_filePath = "C:\\Users\\miao\\Videos\\test2.mp4";
+    char file_path[] = "C:\\Users\\miao\\Videos\\test2.mp4";
     int ret = avformat_open_input(&pFormatCtx, file_path, NULL, NULL);
     C_LOG_INFO(QString("result=%1").arg(ret));
     if(ret != 0)
@@ -269,7 +269,7 @@ void LJIncomingCapturedDataThread::sendImage()
     }
 }
 
-QImage SaveFrame(AVFrame *pFrame, int width, int height,int index)
+void SaveFrame(QImage &image,AVFrame *pFrame, int width, int height,int index)
 {
 
 //  FILE *pFile;
@@ -288,7 +288,7 @@ QImage SaveFrame(AVFrame *pFrame, int width, int height,int index)
 //  fprintf(pFile, "P6%d %d255", width, height);
 
   // Write pixel data
-  QImage image(width,height,QImage::Format_ARGB32);
+//  QImage image(width,height,QImage::Format_ARGB32);
   C_LOG_INFO(QString("width=%1,height=%2").arg(width).arg(height));
   for(y=0; y<height; y++)
   {
@@ -299,13 +299,19 @@ QImage SaveFrame(AVFrame *pFrame, int width, int height,int index)
           int r = (pFrame->data[0]+y*pFrame->linesize[0])[3*x];
           int g = (pFrame->data[0]+y*pFrame->linesize[0])[3*x + 1];
           int b = (pFrame->data[0]+y*pFrame->linesize[0])[3*x + 2];
-        image.setPixelColor(x,y,QColor(r,g,b));
+          image.setPixelColor(x,y,QColor(r,g,b));
+//        image.setPixelColor(x,y,QColor(r,b,g));
+//        image.setPixelColor(x,y,QColor(b,r,g));
+//        image.setPixelColor(x,y,QColor(b,g,r));
+//        image.setPixelColor(x,y,QColor(g,b,r));
+//        image.setPixelColor(x,y,QColor(g,r,b));
+//          image.setPixelColor(x,y,QColor(b,0,0));
       }
 //    printf("\n");
   }
-  image.save("/Users/miaozw/Movies/temp.png");
+//  image.save("/Users/miaozw/Movies/temp.png");
 
-  return image;
+//  return image;
   // Close file
 //  fclose(pFile);
 
@@ -331,12 +337,18 @@ void LJIncomingCapturedDataThread::sendFrame()
                                      pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height,
                                      AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
 
-    C_LOG_INFO("TTTTTTTTTT");
-    int numBytes = avpicture_get_size(AV_PIX_FMT_RGB24, pCodecCtx->width,pCodecCtx->height);
-    C_LOG_INFO("TTTTTTTTTT");
 
+    int numBytes = avpicture_get_size(pCodecCtx->pix_fmt, pCodecCtx->width,pCodecCtx->height);
     uint8_t *out_buffer = (uint8_t *) av_malloc(numBytes * sizeof(uint8_t));
-    avpicture_fill((AVPicture *) pFrameRGB, out_buffer, AV_PIX_FMT_RGB24,
+    C_LOG_INFO(QString("TTTTTTTTTT = numBytes= %1").arg(numBytes));
+
+    C_LOG_INFO("TTTTTTTTTT");
+    int numBytes2 = avpicture_get_size(AV_PIX_FMT_RGB24, pCodecCtx->width,pCodecCtx->height);
+
+    C_LOG_INFO(QString("TTTTTTTTTT = numBytes2 = %1").arg(numBytes2));
+
+    uint8_t *out_buffer2 = (uint8_t *) av_malloc(numBytes2 * sizeof(uint8_t));
+    avpicture_fill((AVPicture *) pFrameRGB, out_buffer2, AV_PIX_FMT_RGB24,
                    pCodecCtx->width, pCodecCtx->height);
 
     int y_size = pCodecCtx->width * pCodecCtx->height;
@@ -346,6 +358,7 @@ void LJIncomingCapturedDataThread::sendFrame()
 
 //    av_dump_format(pFormatCtx, 0, file_path, 0); //输出视频信息
 
+    QImage image(pCodecCtx->width,pCodecCtx->height,QImage::Format_ARGB32);
     int index = 0;
     int got_picture;
     int ret = 0;
@@ -387,49 +400,61 @@ void LJIncomingCapturedDataThread::sendFrame()
                               pFrame->linesize, 0, pCodecCtx->height, pFrameRGB->data,
                               pFrameRGB->linesize);
 
+                    C_LOG_INFO(QString("pFrame=%1,pFrameRGB=%2").arg(pFrame->format).arg(pFrameRGB->format));
                     C_LOG_INFO("TTTTTTTTTT");
 
-                    QImage image = SaveFrame(pFrameRGB, pCodecCtx->width,pCodecCtx->height,index++); //保存图片
+                    if(0)
+                    {
+                        SaveFrame(image,pFrameRGB, pCodecCtx->width,pCodecCtx->height,index++); //保存图片
+                        C_LOG_INFO(QString("image.width()=%1,linesize=%2").arg(image.width()).arg(pFrameRGB->linesize[0]));
+                        static int s_count = 0;
+                        s_count++;
+                        if(s_count == 8)
+                        {
+                            image.save("C:\\work\\test.png");
+                        }
 
-                    AVE::VideoCaptureFormat format;
-                    format.width = image.width();
-                    format.height = image.height();
-                    format.strides[0] = image.width() * 4;
-                    format.pixel_format = AVE::PIXEL_FORMAT_ARGB32;
-                    QDateTime datetime = QDateTime::currentDateTime();
-                    //            C_LOG_INFO("send data");
-                    m_device->callback_->OnIncomingCapturedData((char*)image.constBits(), image.width() * image.height() * 4,
-                                                                format, datetime.toMSecsSinceEpoch(), 1000);
-
-//                    AVE::VideoCaptureFormat format;
-//                    format.width = pCodecCtx->width;
-//                    format.height = pCodecCtx->height;
-//                    format.strides[0] = pCodecCtx->width * 4;
-//                    format.pixel_format = AVE::PIXEL_FORMAT_ARGB32;
-//                    QDateTime datetime = QDateTime::currentDateTime();
-
-//                    m_device->callback_->OnIncomingCapturedData((char*)pFrame->data[0], pCodecCtx->width * pCodecCtx->height * 4,
-//                            format, datetime.toMSecsSinceEpoch(), 1000);
-//                    m_device->callback_->OnIncomingCapturedData((char*)pFrame->data, numBytes,
-//                            format, datetime.toMSecsSinceEpoch(), 1000);
-
-                    C_LOG_INFO(QString("pts=%1").arg(packet->pts));
-
-                    ms += (packet->pts - pre_pts);
-                    pre_pts = packet->pts;
-
-                    //                SaveFrame(pFrameRGB, pCodecCtx->width,pCodecCtx->height,index++); //保存图片
+                        AVE::VideoCaptureFormat format;
+                        format.width = image.width();
+                        format.height = image.height();
+                        format.strides[0] = image.width() * 4;
+                        format.pixel_format = AVE::PIXEL_FORMAT_BGRA32;
+                        QDateTime datetime = QDateTime::currentDateTime();
+                        m_device->callback_->OnIncomingCapturedData((char*)image.constBits(), image.width() * image.height() * 4,
+                                                                    format, datetime.toMSecsSinceEpoch(), 1000);
+                    }
+                    else
+                    {
+                        int ysize = pCodecCtx->width * pCodecCtx->height;
+                        AVE::VideoCaptureFormat format;
+                        format.width =  pCodecCtx->width;
+                        format.height =  pCodecCtx->height;
+                        int index = 0;
+                        for(int i = 0; i < 4;++i)
+                        {
+                            format.strides[i] = pFrame->linesize[i];
+                            C_LOG_INFO(QString("pFrame->linesize[%1]=%2").arg(i).arg(pFrame->linesize[i]));
+                        }
+                        for(int i = 0 ; i < ysize; ++i)
+                        {
+                            out_buffer[i] =  pFrame->data[0][i];
+                            if(i < ysize / 4)
+                            {
+                                out_buffer[ysize+i] =  pFrame->data[1][i];
+                                out_buffer[ysize + ysize / 4 + i] =  pFrame->data[2][i];
+                            }
+                        }
+                        C_LOG_INFO(QString("ssindex=%1,numBytes=%2").arg(index).arg(numBytes));
+                        format.pixel_format = AVE::PIXEL_FORMAT_I420;
+                        QDateTime datetime = QDateTime::currentDateTime();
+                        m_device->callback_->OnIncomingCapturedData((char*)out_buffer, numBytes,
+                                                                    format, datetime.toMSecsSinceEpoch(), 1000);
+                    }
+                    int ses =  packet->pts * av_q2d(pCodecCtx->time_base) / 1000;
+                    pre_pts = ses;
+                    ms += ses;
+                    C_LOG_INFO(QString("pts=%1,ses=%2,%3").arg(packet->pts).arg(ses).arg(ms));
                     C_LOG_INFO("TTTTTTTTTT");
-                    //                for(int i = 0; i < pCodecCtx->height;++i)
-                    //                {
-                    //                    for(int j = 0; j < pFrameRGB->linesize[i];++j)
-                    //                    {
-                    //                        printf("%d ",pFrameRGB->data[j + i * pFrameRGB->linesize[0]]);
-                    //                    }
-                    //                    printf("\n");
-                    //                }
-                    //                break;
-                    //                    if (index > 50) return 0; //这里我们就保存50张图片
                 }
             }
             msleep(ms);
@@ -440,7 +465,7 @@ void LJIncomingCapturedDataThread::sendFrame()
         }
     }
     av_free_packet(packet);
-    av_free(out_buffer);
+    av_free(out_buffer2);
     av_free(pFrameRGB);
     avcodec_close(pCodecCtx);
     avformat_close_input(&pFormatCtx);
