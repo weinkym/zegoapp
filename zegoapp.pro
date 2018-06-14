@@ -29,6 +29,7 @@ INCLUDEPATH += ./ljlive
 INCLUDEPATH += ./Model
 INCLUDEPATH += ./Signal
 INCLUDEPATH += ./VideoCapture
+INCLUDEPATH += ./UI
 
 
 SOURCES += main.cpp\
@@ -43,7 +44,11 @@ SOURCES += main.cpp\
     Model/ZegoUserModel.cpp \
     Signal/ZegoSDKSignal.cpp \
     VideoCapture/ZegoVideoCaptureDeviceDemo.cpp \
-    VideoCapture/ZegoVideoCaptureFactoryDemo.cpp
+    VideoCapture/ZegoVideoCaptureFactoryDemo.cpp \
+    UI/ZegoAVView.cpp \
+    Model/ZegoVideoFrame.cpp \
+    ljlive/ljuserviewwidget.cpp \
+    ljlive/ljgolbalconfigmanager.cpp
 
 HEADERS  += mainwindow.h \
     ljlive/ljlivepublishercallback.h \
@@ -56,6 +61,11 @@ HEADERS  += mainwindow.h \
     Model/ZegoUserModel.h \
     Signal/ZegoSDKSignal.h \
     VideoCapture/ZegoVideoCaptureDeviceDemo.h \
-    VideoCapture/ZegoVideoCaptureFactoryDemo.h
+    VideoCapture/ZegoVideoCaptureFactoryDemo.h \
+    UI/ZegoAVView.h \
+    Model/ZegoVideoFrame.h \
+    ljlive/ljuserviewwidget.h \
+    ljlive/ljgolbalconfigmanager.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    ljlive/ljuserviewwidget.ui

@@ -231,6 +231,7 @@ void QZegoAVSignal::OnVideoDeviceStateChanged(AV::DeviceInfo *deviceInfo, AV::De
 
 void QZegoAVSignal::OnUserUpdate(const LIVEROOM::ZegoUserInfo *pUserInfo, unsigned int userCount, LIVEROOM::ZegoUserUpdateType type)
 {
+    qDebug()<<"OnUserUpdate"<<"==================";
 	QVector<QString> userIDs;
 	QVector<QString> userNames;
 	QVector<int> userFlags;

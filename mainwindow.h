@@ -6,6 +6,10 @@
 
 #include "VideoCapture/ZegoVideoCaptureDeviceDemo.h"
 #include "VideoCapture/ZegoVideoCaptureFactoryDemo.h"
+#include "ZegoAVView.h"
+#include "ljuserviewwidget.h"
+#include <QGridLayout>
+#include "ljgolbalconfigmanager.h"
 
 namespace Ui {
 class MainWindow;
@@ -33,7 +37,7 @@ private slots:
 //    void onDisconnect(int errorCode, const QString& roomId);
 //    void onKickOut(int reason, const QString& roomId);
 //    void onSendRoomMessage(int errorCode, const QString& roomId, int sendSeq, unsigned long long messageId);
-//    void onRecvRoomMessage(const QString& roomId, QVector<RoomMsgPtr> vRoomMsgList);
+    void onRecvRoomMessage(const QString& roomId, QVector<RoomMsgPtr> vRoomMsgList);
     void onStreamUpdated(const QString& roomId, QVector<StreamPtr> vStreamList, LIVEROOM::ZegoStreamUpdateType type);
     void onPublishStateUpdate(int stateCode, const QString& streamId, StreamPtr streamInfo);
 //    void onPlayStateUpdate(int stateCode, const QString& streamId);
@@ -44,7 +48,7 @@ private slots:
 //    void onJoinLiveResponse(int result, const QString& fromUserId, const QString& fromUserName, int seq);
 //    void onAudioDeviceChanged(AV::AudioDeviceType deviceType, const QString& strDeviceId, const QString& strDeviceName, AV::DeviceState state);
 //    void onVideoDeviceChanged(const QString& strDeviceId, const QString& strDeviceName, AV::DeviceState state);
-//    void onUserUpdate(QVector<QString> userIDs, QVector<QString> userNames, QVector<int> userFlags, QVector<int> userRoles, unsigned int userCount, LIVEROOM::ZegoUserUpdateType type);
+    void onUserUpdate(QVector<QString> userIDs, QVector<QString> userNames, QVector<int> userFlags, QVector<int> userRoles, unsigned int userCount, LIVEROOM::ZegoUserUpdateType type);
 //    void onMixStream(unsigned int errorCode, const QString& hlsUrl, const QString& rtmpUrl, const QString& mixStreamID, int seq);
 //    void onRecvEndJoinLiveCommand(const QString& userId, const QString& userName, const QString& roomId);
 //#if (defined Q_OS_WIN32) && (defined USE_SURFACE_MERGE)
@@ -54,6 +58,8 @@ private slots:
 //    void onSnapshot(void *pImage, const QString &streamID);
 
 
+    void on_pushButtonSend_clicked();
+
 protected:
     void closeEvent(QCloseEvent *event);
 
@@ -61,13 +67,17 @@ protected:
 private:
     void doClose();
 
+    void updateViewLayout();
+
 private:
     Ui::MainWindow *ui;
     QZegoAVSignal *m_pAVSignal;
     VideoCaptureFactoryGlue *m_videoCaptureFactoryGlue;
+    QGridLayout *gridLayout;
     bool m_init;
     bool m_login;
     bool m_push;
+    QList<LJUserViewWidget*> m_viewList;
 };
 
 #endif // MAINWINDOW_H
