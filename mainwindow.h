@@ -34,7 +34,7 @@ private slots:
 //    void onKickOut(int reason, const QString& roomId);
 //    void onSendRoomMessage(int errorCode, const QString& roomId, int sendSeq, unsigned long long messageId);
 //    void onRecvRoomMessage(const QString& roomId, QVector<RoomMsgPtr> vRoomMsgList);
-//    void onStreamUpdated(const QString& roomId, QVector<StreamPtr> vStreamList, LIVEROOM::ZegoStreamUpdateType type);
+    void onStreamUpdated(const QString& roomId, QVector<StreamPtr> vStreamList, LIVEROOM::ZegoStreamUpdateType type);
     void onPublishStateUpdate(int stateCode, const QString& streamId, StreamPtr streamInfo);
 //    void onPlayStateUpdate(int stateCode, const QString& streamId);
 //    void onPublishQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);

@@ -52,6 +52,8 @@ bool MainWindow::initSDK()
         connect(m_pAVSignal,SIGNAL(sigLoginRoom(int,QString,QVector<StreamPtr>)),this,SLOT(onLoginRoom(int,QString,QVector<StreamPtr>)));
         connect(m_pAVSignal,SIGNAL(sigPublishStateUpdate(int,QString,StreamPtr)),this,SLOT(onPublishStateUpdate(int,QString,StreamPtr)));
         connect(m_pAVSignal,SIGNAL(sigJoinLiveRequest(int,QString,QString,QString)),this,SLOT(onJoinLiveRequest(int,QString,QString,QString)));
+        connect(m_pAVSignal,SIGNAL(sigStreamUpdated(QString,QVector<StreamPtr>,LIVEROOM::ZegoStreamUpdateType)),
+                this,SLOT(onStreamUpdated(QString,QVector<StreamPtr>,LIVEROOM::ZegoStreamUpdateType)));
     }
     QString userId = "yxtuserid";
     QString username = "mzw";
@@ -148,6 +150,19 @@ void MainWindow::onLoginRoom(int errorCode, const QString &roomId, QVector<Strea
     {
         m_login = true;
     }
+}
+
+void MainWindow::onStreamUpdated(const QString &roomId, QVector<StreamPtr> vStreamList, COMMON::ZegoStreamUpdateType type)
+{
+    C_LOG_FUNCTION;
+    C_VALUE_LOG_INFO(roomId);
+    C_VALUE_LOG_INFO(type);
+
+    for(auto obj : vStreamList)
+    {
+//        C_VALUE_LOG_INFO(obj)
+    }
+
 }
 
 void MainWindow::onPublishStateUpdate(int stateCode, const QString &streamId, StreamPtr streamInfo)
