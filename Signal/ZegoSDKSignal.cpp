@@ -15,6 +15,8 @@ QZegoAVSignal::QZegoAVSignal()
 	qRegisterMetaType<AV::ZegoMixStreamResult>("AV::ZegoMixStreamResult");
 	qRegisterMetaType< AV::AudioDeviceType >("AV::AudioDeviceType");
 	qRegisterMetaType< AV::DeviceState >("AV::DeviceState");
+
+    qRegisterMetaType<ZEGO::LIVEROOM::ZegoPublishQuality>("ZEGO::LIVEROOM::ZegoPublishQuality");
 }
 
 QZegoAVSignal::~QZegoAVSignal()
@@ -161,7 +163,19 @@ void QZegoAVSignal::OnPublishQulityUpdate(const char* pszStreamID, int quality, 
 	//strStreamID = strStreamID.left(index);
 	
 	emit sigPublishQualityUpdate(strStreamID, quality, videoFPS, videoKBS);
-	
+
+}
+
+void QZegoAVSignal::OnPublishQualityUpdate(const char *pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality)
+{
+    C_VALUE_LOG_INFO(pszStreamID);
+    C_VALUE_LOG_INFO(publishQuality.akbps);
+    C_VALUE_LOG_INFO(publishQuality.fps);
+    C_VALUE_LOG_INFO(publishQuality.kbps);
+    C_VALUE_LOG_INFO(publishQuality.pktLostRate);
+    C_VALUE_LOG_INFO(publishQuality.quality);
+    C_VALUE_LOG_INFO(publishQuality.rtt);
+    emit sigPublishQualityUpdate(pszStreamID,publishQuality);
 }
 
 void QZegoAVSignal::OnPlayQualityUpdate(const char* pszStreamID, int quality, double videoFPS, double videoKBS)

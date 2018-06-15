@@ -13,6 +13,8 @@
 #include <QFont>
 #include <QPen>
 #include <QFile>
+#include "ljgolbalconfigmanager.h"
+#include <QFontMetrics>
 
 using namespace AVE;
 

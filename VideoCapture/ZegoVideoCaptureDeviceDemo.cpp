@@ -112,8 +112,8 @@ LJIncomingCapturedDataThread::LJIncomingCapturedDataThread(VideoCaptureDeviceGlu
     :QThread(parent)
     ,m_device(device)
 {
-    m_image = QImage(400,400,QImage::Format_ARGB32);
-    m_image.fill(QColor(0,123,12));
+//    m_image = QImage(400,400,QImage::Format_ARGB32);
+//    m_image.fill(QColor(0,123,12));
 }
 
 LJIncomingCapturedDataThread::~LJIncomingCapturedDataThread()
@@ -159,14 +159,15 @@ void LJIncomingCapturedDataThread::run()
     C_LOG_INFO(QString("initVideo=%1").arg("after"));
     C_LOG_INFO(QString("m_videoData.videoStream=%1").arg("m_videoData.videoStream"));
 
-    if(m_videoData.videoStream < 0)
-    {
-        sendImage();
-    }
-    else
-    {
-        sendFrame();
-    }
+//    if(m_videoData.videoStream < 0)
+//    {
+//        sendImage();
+//    }
+//    else
+//    {
+//        sendFrame();
+//    }
+    sendImage();
 }
 
 void LJIncomingCapturedDataThread::initVideo()
@@ -235,37 +236,80 @@ void LJIncomingCapturedDataThread::initVideo()
 
 void LJIncomingCapturedDataThread::sendImage()
 {
-    QPainter painter(&m_image);
-    painter.setPen(QPen(Qt::red));
+//    QSize size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
+//    QColor backColor(0,123,12);
+//    if(size != m_image.size())
+//    {
+//        m_image = QImage(size,QImage::Format_ARGB32);
+//        m_image.fill(backColor);
+//    }
+    m_image = QImage("C:\\work\\zego\\zegoapp\\res\\720p.jpg").convertToFormat(QImage::Format_ARGB32);
+    if(m_image.isNull())
+    {
+        return;
+    }
+
     QFont font;
-    font.setPixelSize(28);
+    font.setPixelSize(168);
+    QFontMetrics fontMetrics(font);
+    QDateTime dateTime = QDateTime::currentDateTime();
+    QTime time = dateTime.time();
+    QString text = time.toString("hh:mm:ss:zzz");
+    QRect boundingRect = fontMetrics.boundingRect(text);
+    QSize imageSize = m_image.size();
+    QSize drawSize(boundingRect.width() + 10,boundingRect.height() + 10);
+
+    QRect bgRect((imageSize.width() - drawSize.width()) / 2,(imageSize.height() - drawSize.height())/2,
+                   drawSize.width(),drawSize.height());
+
+    QImage bgImage = m_image.copy(bgRect);
+
+    QImage drawImage = bgImage;
+
+    QPainter painter(&drawImage);
+    painter.setPen(QPen(Qt::red));
     painter.setFont(font);
+
+    painter.setBrush(QBrush(bgImage));
+
     QRect rect(0,0,m_image.width(),m_image.height());
+
 
     while (!m_device->m_bExit)
     {
         if (m_device->m_bCapture)
         {
+            painter.drawRect(QRect(0,0,drawSize.width(),drawSize.height()));
+
+            QDateTime dateTime = QDateTime::currentDateTime();
+            QTime time = dateTime.time();
+            QString text = time.toString("hh:mm:ss:zzz");
+            QRect boundingRect = fontMetrics.boundingRect(text);
+            QRect textRect((drawSize.width() - boundingRect.width()) / 2 ,(drawSize.height() - boundingRect.height())/2,
+                           boundingRect.width(),boundingRect.height());
+            painter.drawText(textRect,text);
+//            painter.drawEllipse(QRect(0,0,200,200));
+//            painter.drawLine(rect.topLeft(),rect.bottomRight());
+
+            for(int i = 0;i < bgRect.width();i++)
+            {
+                for(int j = 0;j < bgRect.height();j++)
+                {
+                    m_image.setPixelColor(i + bgRect.x(),j + bgRect.y(),drawImage.pixelColor(i,j));
+                }
+            }
+
 
             AVE::VideoCaptureFormat format;
             format.width = m_image.width();
             format.height = m_image.height();
             format.strides[0] = m_image.width() * 4;
-            format.pixel_format = AVE::PIXEL_FORMAT_ARGB32;
-            QDateTime datetime = QDateTime::currentDateTime();
-            m_image.fill(QColor(0,255,0));
-
-            painter.drawText(100,200,datetime.toString("yyyyMMdd hh:mm:ss.zzz"));
-            painter.drawRect(rect);
-            painter.drawEllipse(QRect(0,0,200,200));
-            painter.drawLine(rect.topLeft(),rect.bottomRight());
-
-            //            C_LOG_INFO("send data");
+            format.pixel_format = AVE::PIXEL_FORMAT_BGRA32;
             m_device->callback_->OnIncomingCapturedData((char*)m_image.constBits(), m_image.width() * m_image.height() * 4,
-                                                        format, datetime.toMSecsSinceEpoch(), 1000);
+                                                        format, dateTime.toMSecsSinceEpoch(), 1000);
         }
         //        this->msleep(10);
-        this->msleep(200);
+        this->msleep(100);
     }
 }
 

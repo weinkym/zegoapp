@@ -30,6 +30,8 @@ MainWindow::MainWindow(QWidget *parent) :
   ,m_push(false)
 {
     ui->setupUi(this);
+    m_timer.setInterval(100);
+    connect(&m_timer,SIGNAL(timeout()),this,SLOT(onSendTimeout()));
 }
 
 MainWindow::~MainWindow()
@@ -59,6 +61,9 @@ bool MainWindow::initSDK()
                 this,SLOT(onUserUpdate(QVector<QString>,QVector<QString>,QVector<int>,QVector<int>,uint,LIVEROOM::ZegoUserUpdateType)));
         connect(m_pAVSignal,SIGNAL(sigRecvRoomMessage(QString,QVector<RoomMsgPtr>)),
                 this,SLOT(onRecvRoomMessage(QString,QVector<RoomMsgPtr>)));
+//        connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate(QString,int,double,double)),this,SLOT(onPublishQualityUpdate(QString,int,double,double)));
+        connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate(const char*,ZEGO::LIVEROOM::ZegoPublishQuality)),
+                this,SLOT(onPublishQualityUpdate(const char*,ZEGO::LIVEROOM::ZegoPublishQuality)));
     }
     QString userId = "yxtuserid";
     QString username = "mzw";
@@ -226,9 +231,20 @@ void MainWindow::onPublishStateUpdate(int stateCode, const QString &streamId, St
 {
     C_VALUE_LOG_INFO(stateCode);
     C_VALUE_LOG_INFO(streamId);
-//    C_VALUE_LOG_INFO(streamInfo);
+    C_VALUE_LOG_INFO(streamInfo.data()->getStreamId());
+    C_VALUE_LOG_INFO(streamInfo.data()->getExtraInfo());
+    C_VALUE_LOG_INFO(streamInfo.data()->getUserId());
+    C_VALUE_LOG_INFO(streamInfo.data()->getUserName());
 
     m_push = (stateCode == 0);
+}
+
+void MainWindow::onPublishQualityUpdate(const QString &streamId, int quality, double videoFPS, double videoKBS)
+{
+    C_VALUE_LOG_INFO(streamId);
+    C_VALUE_LOG_INFO(quality);
+    C_VALUE_LOG_INFO(videoFPS);
+    C_VALUE_LOG_INFO(videoKBS);
 }
 
 void MainWindow::onJoinLiveRequest(int seq, const QString &fromUserId, const QString &fromUserName, const QString &roomId)
@@ -376,4 +392,35 @@ void MainWindow::on_pushButtonSend_clicked()
         text = QDateTime::currentDateTime().toString("yyyyMMdd hh:mm:ss:zzz");
     }
     LIVEROOM::SendRoomMessage(ROOM::ZegoMessageType::Text, ROOM::ZegoMessageCategory::Chat, ROOM::ZegoMessagePriority::Default, text.toStdString().c_str());
+}
+
+void MainWindow::onSendTimeout()
+{
+    QString text = QDateTime::currentDateTime().toString("yyyyMMdd hh:mm:ss:zzz");
+    LIVEROOM::SendRoomMessage(ROOM::ZegoMessageType::Text, ROOM::ZegoMessageCategory::Chat, ROOM::ZegoMessagePriority::Default, text.toStdString().c_str());
+}
+
+void MainWindow::on_pushButtonTimer_clicked()
+{
+    if(m_timer.isActive())
+    {
+        m_timer.stop();
+        ui->pushButtonTimer->setText("send time");
+    }
+    else
+    {
+        m_timer.start();
+        ui->pushButtonTimer->setText("sending time");
+    }
+}
+
+void MainWindow::OnPublishQualityUpdate(const char *pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality)
+{
+    C_VALUE_LOG_INFO(pszStreamID);
+    C_VALUE_LOG_INFO(publishQuality.akbps);
+    C_VALUE_LOG_INFO(publishQuality.fps);
+    C_VALUE_LOG_INFO(publishQuality.kbps);
+    C_VALUE_LOG_INFO(publishQuality.pktLostRate);
+    C_VALUE_LOG_INFO(publishQuality.quality);
+    C_VALUE_LOG_INFO(publishQuality.rtt);
 }

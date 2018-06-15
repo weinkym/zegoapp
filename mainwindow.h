@@ -41,7 +41,7 @@ private slots:
     void onStreamUpdated(const QString& roomId, QVector<StreamPtr> vStreamList, LIVEROOM::ZegoStreamUpdateType type);
     void onPublishStateUpdate(int stateCode, const QString& streamId, StreamPtr streamInfo);
 //    void onPlayStateUpdate(int stateCode, const QString& streamId);
-//    void onPublishQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
+    void onPublishQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
 //    void onPlayQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
 //    void onAuxInput(unsigned char* pData, int* pDataLen, int pDataLenValue, int* pSampleRate, int* pNumChannels);
     void onJoinLiveRequest(int seq, const QString& fromUserId, const QString& fromUserName, const QString& roomId);
@@ -59,6 +59,10 @@ private slots:
 
 
     void on_pushButtonSend_clicked();
+    void onSendTimeout();
+
+    void on_pushButtonTimer_clicked();
+    void OnPublishQualityUpdate(const char* pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality);
 
 protected:
     void closeEvent(QCloseEvent *event);
@@ -78,6 +82,7 @@ private:
     bool m_login;
     bool m_push;
     QList<LJUserViewWidget*> m_viewList;
+    QTimer m_timer;
 };
 
 #endif // MAINWINDOW_H

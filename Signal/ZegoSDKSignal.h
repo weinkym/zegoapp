@@ -8,6 +8,7 @@
 #include "LiveRoomCallback-IM.h"
 #include "LiveRoomCallback-Player.h"
 #include "LiveRoomCallback-Publisher.h"
+
 //#define USE_SURFACE_MERGE
 #if (defined Q_OS_WIN32) && (defined Q_PROCESSOR_X86_32) && (defined USE_SURFACE_MERGE)
 #include "ZegoSurfaceMergeCallback.h"
@@ -15,7 +16,10 @@
 #endif
 #include <QObject>
 #include <QVector>
+#include "clogsetting.h"
+
 using namespace ZEGO;
+
 
 class QZegoAVSignal : public QObject,
 	public LIVEROOM::IRoomCallback,
@@ -42,11 +46,12 @@ signals:
 	void sigKickOut(int reason, const QString& roomId);
 	void sigSendRoomMessage(int errorCode, const QString& roomId, int sendSeq, unsigned long long messageId);
 	void sigRecvRoomMessage(const QString& roomId, QVector<RoomMsgPtr> vRoomMsgList);
-	void sigStreamUpdated(const QString& roomId, QVector<StreamPtr> vStreamList, LIVEROOM::ZegoStreamUpdateType type);
+    void sigStreamUpdated(const QString& roomId, QVector<StreamPtr> vStreamList,int type);
 	void sigPublishStateUpdate(int stateCode, const QString& streamId, StreamPtr streamInfo);
 	void sigPlayStateUpdate(int stateCode, const QString& streamId);
 	void sigPublishQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
-	void sigPlayQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
+    void sigPublishQualityUpdate(const char* pszStreamID,  ZEGO::LIVEROOM::ZegoPublishQuality publishQuality);
+    void sigPlayQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
 	void sigAuxInput(unsigned char* pData, int* pDataLen, int pDataLenValue, int* pSampleRate, int* pNumChannels);
 	void sigJoinLiveRequest(int seq, const QString& fromUserId, const QString& fromUserName, const QString& roomId);
 	void sigJoinLiveResponse(int result, const QString& fromUserId, const QString& fromUserName, int seq);
@@ -60,7 +65,7 @@ signals:
 #endif
 	void sigPreviewSnapshot(void *pImage);
 	void sigSnapshot(void *pImage, const QString &streamID);
-	
+
 protected:
 	void OnInitSDK(int nError);
 	void OnLoginRoom(int errorCode, const char *pszRoomID, const LIVEROOM::ZegoStreamInfo *pStreamInfo, unsigned int streamCount);
@@ -76,7 +81,8 @@ protected:
 	void OnJoinLiveRequest(int seq, const char *pszFromUserId, const char *pszFromUserName, const char *pszRoomID);
 	void OnInviteJoinLiveResponse(int result, const char *pszFromUserId, const char *pszFromUserName, int seq) {}
 	void OnPublishQulityUpdate(const char* pszStreamID, int quality, double videoFPS, double videoKBS);
-	void OnCaptureVideoSizeChanged(int nWidth, int nHeight) {}
+    void OnPublishQualityUpdate(const char* pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality);
+    void OnCaptureVideoSizeChanged(int nWidth, int nHeight) {}
 	void OnAuxCallback(unsigned char *pData, int *pDataLen, int *pSampleRate, int *pNumChannels);
 	void OnMixStream(const AV::ZegoMixStreamResult& result, const char* pszMixStreamID, int seq);
 
@@ -101,6 +107,7 @@ protected:
 	void OnPreviewSnapshot(void *pImage);
 	void OnSnapshot(void *pImage, const char* pszStreamID);
 	
+
 #if (defined Q_OS_WIN32) && (defined Q_PROCESSOR_X86_32) && (defined USE_SURFACE_MERGE)
 	void OnSurfaceMergeResult(
 		unsigned char *surfaceMergeData,

@@ -8,6 +8,10 @@
 #ifndef ZegoLiveRoomDefines_h
 #define ZegoLiveRoomDefines_h
 
+#include <QUuid>
+#include <QVariant>
+#include <QDateTime>
+
 #include "./AVDefines.h"
 #include "./RoomDefines.h"
 
@@ -93,5 +97,7 @@ namespace ZEGO
         };
     }
 }
+
+Q_DECLARE_METATYPE(ZEGO::LIVEROOM::ZegoPublishQuality)
 
 #endif /* ZegoLiveRoomDefines_h */
