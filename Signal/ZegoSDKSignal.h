@@ -46,7 +46,7 @@ signals:
 	void sigKickOut(int reason, const QString& roomId);
 	void sigSendRoomMessage(int errorCode, const QString& roomId, int sendSeq, unsigned long long messageId);
 	void sigRecvRoomMessage(const QString& roomId, QVector<RoomMsgPtr> vRoomMsgList);
-    void sigStreamUpdated(const QString& roomId, QVector<StreamPtr> vStreamList,int type);
+    void sigStreamUpdated(const QString& roomId, QVector<StreamPtr> vStreamList,LIVEROOM::ZegoStreamUpdateType type);
 	void sigPublishStateUpdate(int stateCode, const QString& streamId, StreamPtr streamInfo);
 	void sigPlayStateUpdate(int stateCode, const QString& streamId);
 	void sigPublishQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);

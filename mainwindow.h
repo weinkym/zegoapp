@@ -62,7 +62,8 @@ private slots:
     void onSendTimeout();
 
     void on_pushButtonTimer_clicked();
-    void OnPublishQualityUpdate(const char* pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality);
+    void OnPublishQualityUpdate2(const char* pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality);
+    void onCheckedSoundChanged(int state);
 
 protected:
     void closeEvent(QCloseEvent *event);

@@ -168,13 +168,22 @@ void QZegoAVSignal::OnPublishQulityUpdate(const char* pszStreamID, int quality, 
 
 void QZegoAVSignal::OnPublishQualityUpdate(const char *pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality)
 {
-    C_VALUE_LOG_INFO(pszStreamID);
-    C_VALUE_LOG_INFO(publishQuality.akbps);
-    C_VALUE_LOG_INFO(publishQuality.fps);
-    C_VALUE_LOG_INFO(publishQuality.kbps);
-    C_VALUE_LOG_INFO(publishQuality.pktLostRate);
-    C_VALUE_LOG_INFO(publishQuality.quality);
-    C_VALUE_LOG_INFO(publishQuality.rtt);
+//    C_VALUE_LOG_INFO(pszStreamID);
+//    C_VALUE_LOG_INFO(publishQuality.akbps);
+//    C_VALUE_LOG_INFO(publishQuality.fps);
+//    C_VALUE_LOG_INFO(publishQuality.kbps);
+//    C_VALUE_LOG_INFO(publishQuality.pktLostRate);
+//    C_VALUE_LOG_INFO(publishQuality.quality);
+//    C_VALUE_LOG_INFO(publishQuality.rtt);
+    QStringList infos;
+    infos.append(QString("pszStreamID=%1").arg(pszStreamID));
+    infos.append(QString("publishQuality.akbps=%1").arg(publishQuality.akbps));
+    infos.append(QString("publishQuality.fps=%1").arg(publishQuality.fps));
+    infos.append(QString("publishQuality.kbps=%1").arg(publishQuality.kbps));
+    infos.append(QString("publishQuality.pktLostRate=%1").arg(publishQuality.pktLostRate));
+    infos.append(QString("publishQuality.quality=%1").arg(publishQuality.quality));
+    infos.append(QString("publishQuality.rtt=%1").arg(publishQuality.rtt));
+    C_LOG_INFO(infos.join("   "));
     emit sigPublishQualityUpdate(pszStreamID,publishQuality);
 }
 

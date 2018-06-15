@@ -236,6 +236,8 @@ void LJIncomingCapturedDataThread::initVideo()
 
 void LJIncomingCapturedDataThread::sendImage()
 {
+    int fps = LJGolbalConfigManager::getInstance()->getFPS();
+    int intervalMSes = 1000 / fps;
 //    QSize size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
 //    QColor backColor(0,123,12);
 //    if(size != m_image.size())
@@ -252,9 +254,9 @@ void LJIncomingCapturedDataThread::sendImage()
     QFont font;
     font.setPixelSize(168);
     QFontMetrics fontMetrics(font);
-    QDateTime dateTime = QDateTime::currentDateTime();
-    QTime time = dateTime.time();
-    QString text = time.toString("hh:mm:ss:zzz");
+    QDateTime preDateTime = QDateTime::currentDateTime();
+    QTime preTime = preDateTime.time();
+    QString text = preTime.toString("hh:mm:ss:zzz");
     QRect boundingRect = fontMetrics.boundingRect(text);
     QSize imageSize = m_image.size();
     QSize drawSize(boundingRect.width() + 10,boundingRect.height() + 10);
@@ -277,19 +279,22 @@ void LJIncomingCapturedDataThread::sendImage()
 
     while (!m_device->m_bExit)
     {
+        int msec = 10;
         if (m_device->m_bCapture)
         {
-            painter.drawRect(QRect(0,0,drawSize.width(),drawSize.height()));
-
+            this->msleep(10);
             QDateTime dateTime = QDateTime::currentDateTime();
             QTime time = dateTime.time();
+
+            painter.drawRect(QRect(0,0,drawSize.width(),drawSize.height()));
+
             QString text = time.toString("hh:mm:ss:zzz");
             QRect boundingRect = fontMetrics.boundingRect(text);
             QRect textRect((drawSize.width() - boundingRect.width()) / 2 ,(drawSize.height() - boundingRect.height())/2,
                            boundingRect.width(),boundingRect.height());
             painter.drawText(textRect,text);
-//            painter.drawEllipse(QRect(0,0,200,200));
-//            painter.drawLine(rect.topLeft(),rect.bottomRight());
+            //            painter.drawEllipse(QRect(0,0,200,200));
+            //            painter.drawLine(rect.topLeft(),rect.bottomRight());
 
             for(int i = 0;i < bgRect.width();i++)
             {
@@ -298,8 +303,6 @@ void LJIncomingCapturedDataThread::sendImage()
                     m_image.setPixelColor(i + bgRect.x(),j + bgRect.y(),drawImage.pixelColor(i,j));
                 }
             }
-
-
             AVE::VideoCaptureFormat format;
             format.width = m_image.width();
             format.height = m_image.height();
@@ -307,9 +310,18 @@ void LJIncomingCapturedDataThread::sendImage()
             format.pixel_format = AVE::PIXEL_FORMAT_BGRA32;
             m_device->callback_->OnIncomingCapturedData((char*)m_image.constBits(), m_image.width() * m_image.height() * 4,
                                                         format, dateTime.toMSecsSinceEpoch(), 1000);
+
+            {
+                QTime time = QTime::currentTime();
+                int ms = preTime.msecsTo(QTime::currentTime());
+                preTime = time;
+                if(ms < intervalMSes)
+                {
+                    msec = intervalMSes - ms;
+                }
+            }
         }
-        //        this->msleep(10);
-        this->msleep(100);
+        this->msleep(msec);
     }
 }
 

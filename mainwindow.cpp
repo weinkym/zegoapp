@@ -32,6 +32,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     m_timer.setInterval(100);
     connect(&m_timer,SIGNAL(timeout()),this,SLOT(onSendTimeout()));
+    connect(ui->checkBoxSound,SIGNAL(stateChanged(int)),this,SLOT(onCheckedSoundChanged(int)));
+    ui->radioButtonHD->setChecked(true);
 }
 
 MainWindow::~MainWindow()
@@ -63,7 +65,7 @@ bool MainWindow::initSDK()
                 this,SLOT(onRecvRoomMessage(QString,QVector<RoomMsgPtr>)));
 //        connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate(QString,int,double,double)),this,SLOT(onPublishQualityUpdate(QString,int,double,double)));
         connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate(const char*,ZEGO::LIVEROOM::ZegoPublishQuality)),
-                this,SLOT(onPublishQualityUpdate(const char*,ZEGO::LIVEROOM::ZegoPublishQuality)));
+                this,SLOT(onPublishQualityUpdate2(const char*,ZEGO::LIVEROOM::ZegoPublishQuality)));
     }
     QString userId = "yxtuserid";
     QString username = "mzw";
@@ -116,12 +118,28 @@ void MainWindow::on_pushButtonStart_clicked()
     {
         return;
     }
-    int fps = 30;
+    int fps = LJGolbalConfigManager::getInstance()->getFPS();
 //    int bitrate = ;
 
 
+//    QSize c_size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
+//    QSize e_size = LJGolbalConfigManager::getInstance()->getVideoEncodeResolution();
+
     QSize c_size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
-    QSize e_size = LJGolbalConfigManager::getInstance()->getVideoEncodeResolution();
+    if(ui->radioButtonHD->isChecked())
+    {
+        c_size = QSize(1280,720);
+    }
+    else if(ui->radioButtonLD->isChecked())
+    {
+        c_size = QSize(720,480);
+    }
+    else
+    {
+        c_size = QSize(1920,1080);
+    }
+    QSize e_size = c_size;
+
     LIVEROOM::SetVideoFPS(fps);
 //    LIVEROOM::SetVideoBitrate(1024);
     LIVEROOM::SetVideoCaptureResolution(c_size.width(), c_size.height());
@@ -132,6 +150,7 @@ void MainWindow::on_pushButtonStart_clicked()
 //    LIVEROOM::SetPreviewView((void *)ui->widget);
 //    LIVEROOM::SetPreviewViewMode(LIVEROOM::ZegoVideoViewModeScaleAspectFit);
 //    LIVEROOM::StartPreview();
+
 
 
     QString roomId = "m123456";
@@ -414,13 +433,22 @@ void MainWindow::on_pushButtonTimer_clicked()
     }
 }
 
-void MainWindow::OnPublishQualityUpdate(const char *pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality)
+void MainWindow::OnPublishQualityUpdate2(const char *pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality)
 {
-    C_VALUE_LOG_INFO(pszStreamID);
-    C_VALUE_LOG_INFO(publishQuality.akbps);
-    C_VALUE_LOG_INFO(publishQuality.fps);
-    C_VALUE_LOG_INFO(publishQuality.kbps);
-    C_VALUE_LOG_INFO(publishQuality.pktLostRate);
-    C_VALUE_LOG_INFO(publishQuality.quality);
-    C_VALUE_LOG_INFO(publishQuality.rtt);
+    QStringList infos;
+    infos.append(QString("pszStreamID=%1").arg(pszStreamID));
+    infos.append(QString("publishQuality.akbps=%1").arg(publishQuality.akbps));
+    infos.append(QString("publishQuality.fps=%1").arg(publishQuality.fps));
+    infos.append(QString("publishQuality.kbps=%1").arg(publishQuality.kbps));
+    infos.append(QString("publishQuality.pktLostRate=%1").arg(publishQuality.pktLostRate));
+    infos.append(QString("publishQuality.quality=%1").arg(publishQuality.quality));
+    infos.append(QString("publishQuality.rtt=%1").arg(publishQuality.rtt));
+    C_LOG_INFO(infos.join("   "));
+}
+
+void MainWindow::onCheckedSoundChanged(int state)
+{
+    C_LOG_FUNCTION;
+    LIVEROOM::EnableSpeaker(ui->checkBoxSound->isChecked());
+
 }
