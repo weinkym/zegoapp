@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>664</width>
-    <height>379</height>
+    <width>673</width>
+    <height>388</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -97,6 +97,98 @@
      </widget>
     </item>
     <item>
+     <widget class="QWidget" name="widget_3" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>60</height>
+       </size>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_6">
+       <item>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="1" column="6">
+          <widget class="QLineEdit" name="lineEditRoomName">
+           <property name="text">
+            <string>testroot01</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="4">
+          <widget class="QLineEdit" name="lineEditUsername">
+           <property name="text">
+            <string>mzw</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QLabel" name="label_3">
+           <property name="text">
+            <string>roomId</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="8">
+          <widget class="QSpinBox" name="spinBoxFps">
+           <property name="minimum">
+            <number>5</number>
+           </property>
+           <property name="maximum">
+            <number>30</number>
+           </property>
+           <property name="value">
+            <number>10</number>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>userId</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="6">
+          <widget class="QLineEdit" name="lineEditRoomId">
+           <property name="text">
+            <string>yxt123456</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QLineEdit" name="lineEditUserId">
+           <property name="text">
+            <string>yxtuserid</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="7">
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>FPS</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="5">
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>roomName</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="3">
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>username</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
        <spacer name="horizontalSpacer">
@@ -135,13 +227,6 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButtonStop">
-        <property name="text">
-         <string>停止推流</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="pushButtonTimer">
         <property name="text">
          <string>自动发送</string>
@@ -162,6 +247,52 @@
        </spacer>
       </item>
      </layout>
+    </item>
+    <item>
+     <widget class="QGroupBox" name="groupBox_2">
+      <property name="title">
+       <string>推送类型</string>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_7">
+       <item>
+        <widget class="QRadioButton" name="rbImage">
+         <property name="text">
+          <string>图片</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="rbVideo">
+         <property name="text">
+          <string>视频</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="rbYUV">
+         <property name="text">
+          <string>YUV</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="horizontalSpacer_5">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>521</width>
+           <height>16</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
     </item>
     <item>
      <widget class="QGroupBox" name="groupBox">
@@ -204,6 +335,13 @@
         </widget>
        </item>
        <item>
+        <widget class="QCheckBox" name="checkBoxMicphone">
+         <property name="text">
+          <string>麦克风</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <spacer name="horizontalSpacer_4">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -226,7 +364,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>664</width>
+     <width>673</width>
      <height>17</height>
     </rect>
    </property>

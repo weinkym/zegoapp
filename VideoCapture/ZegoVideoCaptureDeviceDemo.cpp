@@ -124,50 +124,33 @@ LJIncomingCapturedDataThread::~LJIncomingCapturedDataThread()
 void LJIncomingCapturedDataThread::run()
 {
 
-
-//    Format_RGB32,
-//    Format_ARGB32,
-//    Format_ARGB32_Premultiplied,
-//    Format_RGB16,
-//    Format_ARGB8565_Premultiplied,
-//    Format_RGB666,
-//    Format_ARGB6666_Premultiplied,
-//    Format_RGB555,
-//    Format_ARGB8555_Premultiplied,
-//    Format_RGB888,
-//    Format_RGB444,
-//    Format_ARGB4444_Premultiplied,
-//    Format_RGBX8888,
-//    Format_RGBA8888,
-//    Format_RGBA8888_Premultiplied,
-//    Format_BGR30,
-//    Format_A2BGR30_Premultiplied,
-//    Format_RGB30,
-//    Format_A2RGB30_Premultiplied,
-//    Format_Alpha8,
-//    PIXEL_FORMAT_BGRA32 = 4,
-//    PIXEL_FORMAT_RGBA32 = 5,
-//    PIXEL_FORMAT_ARGB32 = 6,
-//    PIXEL_FORMAT_ABGR32 = 7,
     if(!m_device)
     {
         return;
     }
 
-    C_LOG_INFO(QString("initVideo=%1").arg("befor"));
-    initVideo();
-    C_LOG_INFO(QString("initVideo=%1").arg("after"));
-    C_LOG_INFO(QString("m_videoData.videoStream=%1").arg("m_videoData.videoStream"));
+    LJGolbalConfigManager::DataType dataType = LJGolbalConfigManager::getInstance()->getDataType();
+    if(dataType == LJGolbalConfigManager::DATA_TYPE_IMAGE)
+    {
+        sendImage();
+    }
+    else
+    {
+        C_LOG_INFO(QString("initVideo=%1").arg("befor"));
+        initVideo();
+        C_LOG_INFO(QString("initVideo=%1").arg("after"));
+        C_LOG_INFO(QString("m_videoData.videoStream=%1").arg("m_videoData.videoStream"));
+        if(m_videoData.videoStream < 0)
+        {
+            sendImage();
+        }
+        else
+        {
+            sendFrame(dataType == LJGolbalConfigManager::DATA_TYPE_YUV);
+        }
+    }
 
-//    if(m_videoData.videoStream < 0)
-//    {
-//        sendImage();
-//    }
-//    else
-//    {
-//        sendFrame();
-//    }
-    sendImage();
+//    sendImage();
 }
 
 void LJIncomingCapturedDataThread::initVideo()
@@ -176,8 +159,11 @@ void LJIncomingCapturedDataThread::initVideo()
     qDebug() << "version is:" << version;
     AVFormatContext *pFormatCtx = avformat_alloc_context();
 //    m_filePath = "C:\\Users\\miao\\Videos\\test2.mp4";
-    char file_path[] = "C:\\Users\\miao\\Videos\\test2.mp4";
-    int ret = avformat_open_input(&pFormatCtx, file_path, NULL, NULL);
+//    char file_path[] = "C:\\Users\\miao\\Videos\\720.mp4";
+    QString path = LJGolbalConfigManager::getInstance()->getVideoPath();
+    C_LOG_INFO(QString("path=%1").arg(path.toLocal8Bit().data()));
+
+    int ret = avformat_open_input(&pFormatCtx, path.toLocal8Bit().data(), NULL, NULL);
     C_LOG_INFO(QString("result=%1").arg(ret));
     if(ret != 0)
     {
@@ -238,21 +224,19 @@ void LJIncomingCapturedDataThread::sendImage()
 {
     int fps = LJGolbalConfigManager::getInstance()->getFPS();
     int intervalMSes = 1000 / fps;
-//    QSize size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
-//    QColor backColor(0,123,12);
-//    if(size != m_image.size())
-//    {
-//        m_image = QImage(size,QImage::Format_ARGB32);
-//        m_image.fill(backColor);
-//    }
-    m_image = QImage("C:\\work\\zego\\zegoapp\\res\\720p.jpg").convertToFormat(QImage::Format_ARGB32);
+    QString imagePath = LJGolbalConfigManager::getInstance()->getImagePath();
+    C_LOG_INFO(QString("imagePath=%1").arg(imagePath));
+//    imagePath = ":/images/res/720P.jpg";
+
+    m_image = QImage(imagePath).convertToFormat(QImage::Format_ARGB32);
     if(m_image.isNull())
     {
+        C_LOG_INFO(QString("m_image is NULL"));
         return;
     }
 
     QFont font;
-    font.setPixelSize(168);
+    font.setPixelSize(m_image.height() / 5);
     QFontMetrics fontMetrics(font);
     QDateTime preDateTime = QDateTime::currentDateTime();
     QTime preTime = preDateTime.time();
@@ -328,24 +312,8 @@ void LJIncomingCapturedDataThread::sendImage()
 void SaveFrame(QImage &image,AVFrame *pFrame, int width, int height,int index)
 {
 
-//  FILE *pFile;
-//  char szFilename[32];
   int  y;
-
-  // Open file
-//  sprintf(szFilename, "frame%d.ppm", index);
-//  pFile=fopen(szFilename, "wb");
-//  pFile=fopen("/Users/miaozw/Movies/test.png", "wb");
-
-//  if(pFile==NULL)
-//    return;
-
-  // Write header
-//  fprintf(pFile, "P6%d %d255", width, height);
-
-  // Write pixel data
-//  QImage image(width,height,QImage::Format_ARGB32);
-  C_LOG_INFO(QString("width=%1,height=%2").arg(width).arg(height));
+//  C_LOG_INFO(QString("width=%1,height=%2").arg(width).arg(height));
   for(y=0; y<height; y++)
   {
 //    fwrite(pFrame->data[0]+y*pFrame->linesize[0], 1, width*3, pFile);
@@ -356,24 +324,11 @@ void SaveFrame(QImage &image,AVFrame *pFrame, int width, int height,int index)
           int g = (pFrame->data[0]+y*pFrame->linesize[0])[3*x + 1];
           int b = (pFrame->data[0]+y*pFrame->linesize[0])[3*x + 2];
           image.setPixelColor(x,y,QColor(r,g,b));
-//        image.setPixelColor(x,y,QColor(r,b,g));
-//        image.setPixelColor(x,y,QColor(b,r,g));
-//        image.setPixelColor(x,y,QColor(b,g,r));
-//        image.setPixelColor(x,y,QColor(g,b,r));
-//        image.setPixelColor(x,y,QColor(g,r,b));
-//          image.setPixelColor(x,y,QColor(b,0,0));
       }
-//    printf("\n");
   }
-//  image.save("/Users/miaozw/Movies/temp.png");
-
-//  return image;
-  // Close file
-//  fclose(pFile);
-
 }
 
-void LJIncomingCapturedDataThread::sendFrame()
+void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
 {
     AVFrame *pFrame = av_frame_alloc();
     AVFrame *pFrameRGB = av_frame_alloc();
@@ -389,6 +344,9 @@ void LJIncomingCapturedDataThread::sendFrame()
                 .arg(pCodecCtx->width)
                 .arg(pCodecCtx->height));
 
+
+
+
     static struct SwsContext *img_convert_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height,
                                      pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height,
                                      AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
@@ -398,14 +356,12 @@ void LJIncomingCapturedDataThread::sendFrame()
     uint8_t *out_buffer = (uint8_t *) av_malloc(numBytes * sizeof(uint8_t));
     C_LOG_INFO(QString("TTTTTTTTTT = numBytes= %1").arg(numBytes));
 
-    C_LOG_INFO("TTTTTTTTTT");
     int numBytes2 = avpicture_get_size(AV_PIX_FMT_RGB24, pCodecCtx->width,pCodecCtx->height);
 
-    C_LOG_INFO(QString("TTTTTTTTTT = numBytes2 = %1").arg(numBytes2));
 
-    uint8_t *out_buffer2 = (uint8_t *) av_malloc(numBytes2 * sizeof(uint8_t));
-    avpicture_fill((AVPicture *) pFrameRGB, out_buffer2, AV_PIX_FMT_RGB24,
-                   pCodecCtx->width, pCodecCtx->height);
+//    uint8_t *out_buffer2 = (uint8_t *) av_malloc(numBytes2 * sizeof(uint8_t));
+//    avpicture_fill((AVPicture *) pFrameRGB, out_buffer2, AV_PIX_FMT_RGB24,
+//                   pCodecCtx->width, pCodecCtx->height);
 
     int y_size = pCodecCtx->width * pCodecCtx->height;
 
@@ -420,28 +376,41 @@ void LJIncomingCapturedDataThread::sendFrame()
     int ret = 0;
     int64_t pre_pts = 0;
 
+
+    QFont font;
+    font.setPixelSize(168);
+    QFontMetrics fontMetrics(font);
+    QDateTime preDateTime = QDateTime::currentDateTime();
+    QTime preTime = preDateTime.time();
+    QString text = preTime.toString("hh:mm:ss:zzz");
+    QRect boundingRect = fontMetrics.boundingRect(text);
+    QSize imageSize(pCodecCtx->width,pCodecCtx->height);
+    QSize drawSize(boundingRect.width() + 10,boundingRect.height() + 10);
+    QRect bgRect((imageSize.width() - drawSize.width()) / 2,(imageSize.height() - drawSize.height())/2,
+                   drawSize.width(),drawSize.height());
+    int fps = LJGolbalConfigManager::getInstance()->getFPS();
+    int intervalMSes = 1000 / fps;
+    QPainter painter(&image);
+    painter.setPen(QPen(Qt::red));
+    painter.setFont(font);
+
+
     C_LOG_INFO("TTTTTTTTTT");
     while (!m_device->m_bExit)
     {
         if(m_device->m_bCapture)
         {
-            C_LOG_INFO("TTTTTTTTTT");
             if (av_read_frame(pFormatCtx, packet) < 0)
             {
-                C_LOG_INFO("TTTTTTTTTT");
                 av_seek_frame(pFormatCtx,0,0,0);
-                C_LOG_INFO("TTTTTTTTTT");
                 pre_pts = 0;
-                //            break; //这里认为视频读取完了
                 continue;
             }
             int64_t ms = 10;
-            C_LOG_INFO(QString("packet->stream_index=%1,videoStream=%2").arg(packet->stream_index).arg(videoStream));
-
-            if (packet->stream_index == videoStream) {
-                C_LOG_INFO("TTTTTTTTTT");
+            QTime sTime = QTime::currentTime();
+            if (packet->stream_index == videoStream)
+            {
                 ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture,packet);
-                C_LOG_INFO("TTTTTTTTTT");
 
                 if (ret < 0)
                 {
@@ -449,35 +418,44 @@ void LJIncomingCapturedDataThread::sendFrame()
                     return;
                 }
 
-                if (got_picture) {
-                    C_LOG_INFO("TTTTTTTTTT");
-                    sws_scale(img_convert_ctx,
-                              (uint8_t const * const *) pFrame->data,
-                              pFrame->linesize, 0, pCodecCtx->height, pFrameRGB->data,
-                              pFrameRGB->linesize);
+                if (got_picture)
+                {
+//                    sws_scale(img_convert_ctx,
+//                              (uint8_t const * const *) pFrame->data,
+//                              pFrame->linesize, 0, pCodecCtx->height, pFrameRGB->data,
+//                              pFrameRGB->linesize);
 
-                    C_LOG_INFO(QString("pFrame=%1,pFrameRGB=%2").arg(pFrame->format).arg(pFrameRGB->format));
-                    C_LOG_INFO("TTTTTTTTTT");
-
-                    if(0)
+//                    C_LOG_INFO(QString("pFrame=%1,pFrameRGB=%2").arg(pFrame->format).arg(pFrameRGB->format));
+                    if(!userYUV)
                     {
+                        sws_scale(img_convert_ctx,
+                                  (uint8_t const * const *) pFrame->data,
+                                  pFrame->linesize, 0, pCodecCtx->height, pFrameRGB->data,
+                                  pFrameRGB->linesize);
                         SaveFrame(image,pFrameRGB, pCodecCtx->width,pCodecCtx->height,index++); //保存图片
-                        C_LOG_INFO(QString("image.width()=%1,linesize=%2").arg(image.width()).arg(pFrameRGB->linesize[0]));
-                        static int s_count = 0;
-                        s_count++;
-                        if(s_count == 8)
+//                        C_LOG_INFO(QString("image.width()=%1,linesize=%2").arg(image.width()).arg(pFrameRGB->linesize[0]));
+                        if(!image.isNull())
                         {
-                            image.save("C:\\work\\test.png");
-                        }
+                            static int s_count = 0;
+                            s_count++;
+                            if(s_count % 150 == 0)
+                            {
+//                                image.save(QString("C:\\work\\test_%1.png").arg(s_count));
+                            }
 
-                        AVE::VideoCaptureFormat format;
-                        format.width = image.width();
-                        format.height = image.height();
-                        format.strides[0] = image.width() * 4;
-                        format.pixel_format = AVE::PIXEL_FORMAT_BGRA32;
-                        QDateTime datetime = QDateTime::currentDateTime();
-                        m_device->callback_->OnIncomingCapturedData((char*)image.constBits(), image.width() * image.height() * 4,
-                                                                    format, datetime.toMSecsSinceEpoch(), 1000);
+                            AVE::VideoCaptureFormat format;
+                            format.width = image.width();
+                            format.height = image.height();
+                            format.strides[0] = image.width() * 4;
+                            format.pixel_format = AVE::PIXEL_FORMAT_BGRA32;
+                            QDateTime datetime = QDateTime::currentDateTime();
+
+                            QString text = datetime.time().toString("hh:mm:ss:zzz");
+                            painter.drawText(bgRect,text);
+
+                            m_device->callback_->OnIncomingCapturedData((char*)image.constBits(), image.width() * image.height() * 4,
+                                                                        format, datetime.toMSecsSinceEpoch(), 1000);
+                        }
                     }
                     else
                     {
@@ -506,13 +484,30 @@ void LJIncomingCapturedDataThread::sendFrame()
                         m_device->callback_->OnIncomingCapturedData((char*)out_buffer, numBytes,
                                                                     format, datetime.toMSecsSinceEpoch(), 1000);
                     }
-                    int ses =  packet->pts * av_q2d(pCodecCtx->time_base) / 1000;
-                    pre_pts = ses;
-                    ms += ses;
-                    C_LOG_INFO(QString("pts=%1,ses=%2,%3").arg(packet->pts).arg(ses).arg(ms));
-                    C_LOG_INFO("TTTTTTTTTT");
+                }
+                int ses =  packet->pts * av_q2d(pCodecCtx->time_base);
+                ms = ses - pre_pts;
+                pre_pts = ses;
+
+//                av_free_packet(packet);
+//                packet = (AVPacket *) malloc(sizeof(AVPacket)); //分配一个packet
+//                    av_new_packet(packet, y_size);
+
+//                av_frame_free(&pFrame);
+//                pFrame = av_frame_alloc();
+                int dSec = qAbs(QTime::currentTime().msecsTo(sTime));
+//                C_LOG_INFO(QString("pts=%1,ses=%2,ms=%3,dSec=%4").arg(packet->pts).arg(ses).arg(ms).arg(dSec));
+                if(ms > dSec)
+                {
+                    ms -= dSec;
+                }
+                else
+                {
+//                    C_LOG_INFO("GGGGGGGGGGGGGGGGGGGGGGGG");
+                    ms = 1;
                 }
             }
+
             msleep(ms);
         }
         else
@@ -521,7 +516,8 @@ void LJIncomingCapturedDataThread::sendFrame()
         }
     }
     av_free_packet(packet);
-    av_free(out_buffer2);
+    av_free(out_buffer);
+//    av_free(out_buffer2);
     av_free(pFrameRGB);
     avcodec_close(pCodecCtx);
     avformat_close_input(&pFormatCtx);

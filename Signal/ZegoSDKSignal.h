@@ -50,7 +50,7 @@ signals:
 	void sigPublishStateUpdate(int stateCode, const QString& streamId, StreamPtr streamInfo);
 	void sigPlayStateUpdate(int stateCode, const QString& streamId);
 	void sigPublishQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
-    void sigPublishQualityUpdate(const char* pszStreamID,  ZEGO::LIVEROOM::ZegoPublishQuality publishQuality);
+    void sigPublishQualityUpdate2(const char* pszStreamID,  QVariant);
     void sigPlayQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
 	void sigAuxInput(unsigned char* pData, int* pDataLen, int pDataLenValue, int* pSampleRate, int* pNumChannels);
 	void sigJoinLiveRequest(int seq, const QString& fromUserId, const QString& fromUserName, const QString& roomId);

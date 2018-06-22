@@ -28,12 +28,17 @@ MainWindow::MainWindow(QWidget *parent) :
   ,m_init(false)
   ,m_login(false)
   ,m_push(false)
+  ,m_streamStatus(STREAM_STATUS_NORMAL)
 {
     ui->setupUi(this);
     m_timer.setInterval(100);
     connect(&m_timer,SIGNAL(timeout()),this,SLOT(onSendTimeout()));
     connect(ui->checkBoxSound,SIGNAL(stateChanged(int)),this,SLOT(onCheckedSoundChanged(int)));
+    connect(ui->checkBoxMicphone,SIGNAL(stateChanged(int)),this,SLOT(onCheckedSoundChanged(int)));
+    onCheckedSoundChanged(0);
     ui->radioButtonHD->setChecked(true);
+    updateStreamStatus(STREAM_STATUS_NORMAL);
+    ui->pushButtonTimer->setText("send time");
 }
 
 MainWindow::~MainWindow()
@@ -48,6 +53,29 @@ bool MainWindow::initSDK()
     {
         return true;
     }
+    QString userId = ui->lineEditUserId->text();
+    QString username = ui->lineEditUsername->text();
+    QString roomId = ui->lineEditRoomId->text();
+    QString roomName = ui->lineEditRoomName->text();
+    if(userId.isEmpty() || username.isEmpty() || roomId.isEmpty() || roomName.isEmpty())
+    {
+        appendDebugInfo("userId username roomid and roomname can not empty");
+        return false;
+    }
+    ui->lineEditUsername->setReadOnly(true);
+    ui->lineEditUserId->setReadOnly(true);
+    ui->lineEditRoomId->setReadOnly(true);
+    ui->lineEditRoomName->setReadOnly(true);
+    LJGolbalConfigManager::getInstance()->setFPS(ui->spinBoxFps->value());
+    ui->spinBoxFps->setReadOnly(true);
+
+    ui->rbImage->setEnabled(false);
+    ui->rbVideo->setEnabled(false);
+    ui->rbYUV->setEnabled(false);
+    ui->radioButtonHD->setEnabled(false);
+    ui->radioButtonSD->setEnabled(false);
+    ui->radioButtonLD->setEnabled(false);
+
     //初始化SDK
     // 设置回调对象指针
     if(m_pAVSignal == NULL)
@@ -64,11 +92,10 @@ bool MainWindow::initSDK()
         connect(m_pAVSignal,SIGNAL(sigRecvRoomMessage(QString,QVector<RoomMsgPtr>)),
                 this,SLOT(onRecvRoomMessage(QString,QVector<RoomMsgPtr>)));
 //        connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate(QString,int,double,double)),this,SLOT(onPublishQualityUpdate(QString,int,double,double)));
-        connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate(const char*,ZEGO::LIVEROOM::ZegoPublishQuality)),
-                this,SLOT(onPublishQualityUpdate2(const char*,ZEGO::LIVEROOM::ZegoPublishQuality)));
+        connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate2(const char*,QVariant)),
+                this,SLOT(onPublishQualityUpdate2(const char*,QVariant)));
     }
-    QString userId = "yxtuserid";
-    QString username = "mzw";
+
 
     // 测试环境开关
     LIVEROOM::SetUseTestEnv(true);
@@ -97,10 +124,10 @@ bool MainWindow::initSDK()
     C_VALUE_LOG_INFO(ret);
     if(!ret)
     {
+        appendDebugInfo("init sdk has error");
         return false;
     }
-    QString roomId = "m123456";
-    QString roomName = "mzw";
+
     ret = ZEGO::LIVEROOM::LoginRoom(roomId.toLocal8Bit().data(), ZEGO::COMMON::ZegoRoomRole::Anchor, roomName.toLocal8Bit().data());
     C_VALUE_LOG_INFO(ret);
 
@@ -110,68 +137,28 @@ bool MainWindow::initSDK()
 
 void MainWindow::on_pushButtonStart_clicked()
 {
-    if(!m_init)
-    {
-        return;
-    }
+    initSDK();
     if(!m_login)
     {
         return;
     }
-    int fps = LJGolbalConfigManager::getInstance()->getFPS();
-//    int bitrate = ;
 
-
-//    QSize c_size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
-//    QSize e_size = LJGolbalConfigManager::getInstance()->getVideoEncodeResolution();
-
-    QSize c_size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
-    if(ui->radioButtonHD->isChecked())
+    if(m_streamStatus == STREAM_STATUS_STARTING)
     {
-        c_size = QSize(1280,720);
+        return;
     }
-    else if(ui->radioButtonLD->isChecked())
+    if(m_streamStatus == STREAM_STATUS_NORMAL)
     {
-        c_size = QSize(720,480);
+        doStart();
     }
-    else
+    else if(m_streamStatus == STREAM_STATUS_STARTED)
     {
-        c_size = QSize(1920,1080);
+        doStop();
     }
-    QSize e_size = c_size;
-
-    LIVEROOM::SetVideoFPS(fps);
-//    LIVEROOM::SetVideoBitrate(1024);
-    LIVEROOM::SetVideoCaptureResolution(c_size.width(), c_size.height());
-    LIVEROOM::SetVideoEncodeResolution(e_size.width(), e_size.height());
-
-    //配置View
-//    LIVEROOM::SetPreviewView((void *)AVViews.last()->winId());
-//    LIVEROOM::SetPreviewView((void *)ui->widget);
-//    LIVEROOM::SetPreviewViewMode(LIVEROOM::ZegoVideoViewModeScaleAspectFit);
-//    LIVEROOM::StartPreview();
 
 
-
-    QString roomId = "m123456";
-    QString roomName = "mzw";
-//    QString streamID = m_strPublishStreamID;
-    qDebug() << "start publishing!";
-    //    setWaterPrint();
-    //    LIVEROOM::StartPublishing(m_pChatRoom->getRoomName().toStdString().c_str(), streamID.toStdString().c_str(), LIVEROOM::ZEGO_MIX_STREAM, "");
-    LIVEROOM::StartPublishing(roomName.toLocal8Bit().data(),roomId.toLocal8Bit().data(), LIVEROOM::ZEGO_JOIN_PUBLISH, "");
 }
 
-void MainWindow::on_pushButtonStop_clicked()
-{
-    C_VALUE_LOG_INFO(m_push);
-    if(!m_push)
-    {
-//        return;
-    }
-    bool ret = LIVEROOM::StopPublishing();
-    C_VALUE_LOG_INFO(ret);
-}
 
 void MainWindow::onInitSDK(int nError)
 {
@@ -184,9 +171,10 @@ void MainWindow::onLoginRoom(int errorCode, const QString &roomId, QVector<Strea
     C_VALUE_LOG_INFO(errorCode);
     C_VALUE_LOG_INFO(roomId);
     C_VALUE_LOG_INFO(vStreamList.count());
-    if(errorCode == 0)
+    if(errorCode == 0 && !m_login)
     {
         m_login = true;
+        on_pushButtonStart_clicked();
     }
 }
 
@@ -195,7 +183,7 @@ void MainWindow::onRecvRoomMessage(const QString &roomId, QVector<RoomMsgPtr> vR
     C_LOG_FUNCTION;
     for(auto obj:vRoomMsgList)
     {
-        ui->textEdit->append(QString("roomId=%1,name=%2,content=%3").arg(roomId).arg(obj.data()->getUserName()).arg(obj.data()->getContent()));
+        appendDebugInfo(QString("roomId=%1,name=%2,content=%3").arg(roomId).arg(obj.data()->getUserName()).arg(obj.data()->getContent()));
     }
 }
 
@@ -255,7 +243,15 @@ void MainWindow::onPublishStateUpdate(int stateCode, const QString &streamId, St
     C_VALUE_LOG_INFO(streamInfo.data()->getUserId());
     C_VALUE_LOG_INFO(streamInfo.data()->getUserName());
 
-    m_push = (stateCode == 0);
+    if(stateCode == 0)
+    {
+        updateStreamStatus(STREAM_STATUS_STARTED);
+    }
+    else
+    {
+        appendDebugInfo("start has error");
+        updateStreamStatus(STREAM_STATUS_NORMAL);
+    }
 }
 
 void MainWindow::onPublishQualityUpdate(const QString &streamId, int quality, double videoFPS, double videoKBS)
@@ -348,13 +344,92 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 void MainWindow::doClose()
 {
-//    if(m_push)
+    if(m_streamStatus == STREAM_STATUS_STARTED)
     {
-        on_pushButtonStop_clicked();
+        doStop();
     }
-//    if(m_login)
+    LIVEROOM::LogoutRoom();
+}
+
+void MainWindow::doStart()
+{
+    initSDK();
+    updateStreamStatus(STREAM_STATUS_STARTING);
+    int fps = LJGolbalConfigManager::getInstance()->getFPS();
+//    QSize c_size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
+//    QSize e_size = LJGolbalConfigManager::getInstance()->getVideoEncodeResolution();
+    QSize c_size = LJGolbalConfigManager::getInstance()->getVideoCaptureResolution();
+    if(ui->radioButtonHD->isChecked())
     {
-        LIVEROOM::LogoutRoom();
+        c_size = QSize(1280,720);
+    }
+    else if(ui->radioButtonLD->isChecked())
+    {
+        c_size = QSize(720,480);
+    }
+    else
+    {
+        c_size = QSize(480,360);
+    }
+    QString sizeString = QString("push size %1,%2").arg(c_size.width()).arg(c_size.height());
+    appendDebugInfo(sizeString);
+    this->setStatusTip(sizeString);
+    QString videoPath = (QApplication::applicationDirPath()+"/720P.mp4");
+
+    LJGolbalConfigManager::getInstance()->setVideoPath(QDir::toNativeSeparators(videoPath));
+    LJGolbalConfigManager::getInstance()->setSizeType(c_size.height());
+    LJGolbalConfigManager::getInstance()->setDataType(ui->rbImage->isChecked() ? LJGolbalConfigManager::DATA_TYPE_IMAGE : (ui->rbVideo->isChecked() ? LJGolbalConfigManager::DATA_TYPE_VIDEO : LJGolbalConfigManager::DATA_TYPE_YUV));
+    QSize e_size = c_size;
+
+    LIVEROOM::SetVideoFPS(fps);
+//    LIVEROOM::SetVideoBitrate(1024);
+    LIVEROOM::SetVideoCaptureResolution(c_size.width(), c_size.height());
+    LIVEROOM::SetVideoEncodeResolution(e_size.width(), e_size.height());
+    //配置View
+//    LIVEROOM::SetPreviewView((void *)AVViews.last()->winId());
+//    LIVEROOM::SetPreviewView((void *)ui->widget);
+//    LIVEROOM::SetPreviewViewMode(LIVEROOM::ZegoVideoViewModeScaleAspectFit);
+//    LIVEROOM::StartPreview();
+
+    QString roomId = "m123456";
+    QString roomName = "mzw";
+//    QString streamID = m_strPublishStreamID;
+    qDebug() << "start publishing!";
+    //    setWaterPrint();
+    //    LIVEROOM::StartPublishing(m_pChatRoom->getRoomName().toStdString().c_str(), streamID.toStdString().c_str(), LIVEROOM::ZEGO_MIX_STREAM, "");
+    bool ret = LIVEROOM::StartPublishing(roomName.toLocal8Bit().data(),roomId.toLocal8Bit().data(), LIVEROOM::ZEGO_JOIN_PUBLISH, "");
+
+    updateStreamStatus(ret ? STREAM_STATUS_STARTING : STREAM_STATUS_NORMAL);
+}
+
+void MainWindow::doStop()
+{
+    on_pushButtonTimer_clicked();
+    bool ret = LIVEROOM::StopPublishing();
+    updateStreamStatus(STREAM_STATUS_NORMAL);
+    if(!ret)
+    {
+        appendDebugInfo("stop puslishing has error");
+    }
+}
+
+void MainWindow::updateStreamStatus(MainWindow::StreamStatus status)
+{
+    m_streamStatus = status;
+
+    switch (status)
+    {
+    case STREAM_STATUS_NORMAL:
+        ui->pushButtonStart->setText("Start");
+        break;
+    case STREAM_STATUS_STARTING:
+        ui->pushButtonStart->setText("Starting...");
+        break;
+    case STREAM_STATUS_STARTED:
+        ui->pushButtonStart->setText("Stop");
+        break;
+    default:
+        break;
     }
 }
 
@@ -398,6 +473,18 @@ void MainWindow::updateViewLayout()
     }
 }
 
+void MainWindow::appendDebugInfo(const QString &info)
+{
+    static int s_count = 0;
+    s_count++;
+    if(s_count > 1000)
+    {
+        s_count = 0;
+        ui->textEdit->clear();
+    }
+//    ui->textEdit->append(info);
+}
+
 void MainWindow::on_pushButtonSend_clicked()
 {
     QString text = ui->lineEditInput->text().simplified();
@@ -433,22 +520,26 @@ void MainWindow::on_pushButtonTimer_clicked()
     }
 }
 
-void MainWindow::OnPublishQualityUpdate2(const char *pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality)
+void MainWindow::onPublishQualityUpdate2(const char *pszStreamID, const QVariant &value)
 {
+    ZEGO::LIVEROOM::ZegoPublishQuality obj = value.value<ZEGO::LIVEROOM::ZegoPublishQuality>();
     QStringList infos;
     infos.append(QString("pszStreamID=%1").arg(pszStreamID));
-    infos.append(QString("publishQuality.akbps=%1").arg(publishQuality.akbps));
-    infos.append(QString("publishQuality.fps=%1").arg(publishQuality.fps));
-    infos.append(QString("publishQuality.kbps=%1").arg(publishQuality.kbps));
-    infos.append(QString("publishQuality.pktLostRate=%1").arg(publishQuality.pktLostRate));
-    infos.append(QString("publishQuality.quality=%1").arg(publishQuality.quality));
-    infos.append(QString("publishQuality.rtt=%1").arg(publishQuality.rtt));
-    C_LOG_INFO(infos.join("   "));
+    infos.append(QString("akbps=%1").arg(obj.akbps));
+    infos.append(QString("fps=%1").arg(obj.fps));
+    infos.append(QString("kbps=%1").arg(obj.kbps));
+    infos.append(QString("pktLostRate=%1").arg(obj.pktLostRate));
+    infos.append(QString("quality=%1").arg(obj.quality));
+    infos.append(QString("rtt=%1").arg(obj.rtt));
+    QString paramString = infos.join("   ");
+    C_LOG_INFO(paramString);
+    appendDebugInfo(paramString);
 }
 
 void MainWindow::onCheckedSoundChanged(int state)
 {
     C_LOG_FUNCTION;
     LIVEROOM::EnableSpeaker(ui->checkBoxSound->isChecked());
+    LIVEROOM::EnableMic(ui->checkBoxMicphone->isChecked());
 
 }

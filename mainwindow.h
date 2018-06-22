@@ -10,7 +10,8 @@
 #include "ljuserviewwidget.h"
 #include <QGridLayout>
 #include "ljgolbalconfigmanager.h"
-
+#include <QApplication>
+#include <QDir>
 namespace Ui {
 class MainWindow;
 }
@@ -20,6 +21,12 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    enum StreamStatus{
+        STREAM_STATUS_NORMAL,
+        STREAM_STATUS_STARTING,
+        STREAM_STATUS_STARTED,
+    };
+
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
@@ -27,8 +34,6 @@ public:
 
 private slots:
     void on_pushButtonStart_clicked();
-
-    void on_pushButtonStop_clicked();
 
 
     void onInitSDK(int nError);
@@ -62,7 +67,7 @@ private slots:
     void onSendTimeout();
 
     void on_pushButtonTimer_clicked();
-    void OnPublishQualityUpdate2(const char* pszStreamID, ZEGO::LIVEROOM::ZegoPublishQuality publishQuality);
+    void onPublishQualityUpdate2(const char* pszStreamID, const QVariant &value);
     void onCheckedSoundChanged(int state);
 
 protected:
@@ -72,7 +77,13 @@ protected:
 private:
     void doClose();
 
+    void doStart();
+    void doStop();
+
+    void updateStreamStatus(StreamStatus status);
     void updateViewLayout();
+
+    void appendDebugInfo(const QString &info);
 
 private:
     Ui::MainWindow *ui;
@@ -82,6 +93,7 @@ private:
     bool m_init;
     bool m_login;
     bool m_push;
+    StreamStatus m_streamStatus;
     QList<LJUserViewWidget*> m_viewList;
     QTimer m_timer;
 };

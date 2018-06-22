@@ -53,7 +53,7 @@ private:
 
     void sendImage();
 
-    void sendFrame();
+    void sendFrame(bool userYUV);
 
 private:
     VideoCaptureDeviceGlue *m_device;

@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
 
     MainWindow w;
     w.show();
-    w.initSDK();
+//    w.initSDK();
 
 //    QString userId = "yxtuserid";
 //    QString username = "mzw";

@@ -1,0 +1,7 @@
+<RCC>
+    <qresource prefix="/images">
+        <file>res/360P.jpg</file>
+        <file>res/480P.jpg</file>
+        <file>res/720P.jpg</file>
+    </qresource>
+</RCC>

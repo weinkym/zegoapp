@@ -69,3 +69,6 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui \
     ljlive/ljuserviewwidget.ui
+
+RESOURCES += \
+    source.qrc
