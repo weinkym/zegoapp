@@ -352,30 +352,28 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
                                      AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
 
 
-    int numBytes = avpicture_get_size(pCodecCtx->pix_fmt, pCodecCtx->width,pCodecCtx->height);
+    int numBytes = avpicture_get_size(userYUV ? pCodecCtx->pix_fmt:AV_PIX_FMT_RGB24, pCodecCtx->width,pCodecCtx->height);
     uint8_t *out_buffer = (uint8_t *) av_malloc(numBytes * sizeof(uint8_t));
     C_LOG_INFO(QString("TTTTTTTTTT = numBytes= %1").arg(numBytes));
 
-    int numBytes2 = avpicture_get_size(AV_PIX_FMT_RGB24, pCodecCtx->width,pCodecCtx->height);
-
 
 //    uint8_t *out_buffer2 = (uint8_t *) av_malloc(numBytes2 * sizeof(uint8_t));
-//    avpicture_fill((AVPicture *) pFrameRGB, out_buffer2, AV_PIX_FMT_RGB24,
-//                   pCodecCtx->width, pCodecCtx->height);
+    if(!userYUV)
+    {
+        avpicture_fill((AVPicture *) pFrameRGB, out_buffer, AV_PIX_FMT_RGB24,
+                       pCodecCtx->width, pCodecCtx->height);
+    }
 
     int y_size = pCodecCtx->width * pCodecCtx->height;
 
     AVPacket *packet = (AVPacket *) malloc(sizeof(AVPacket)); //分配一个packet
-    av_new_packet(packet, y_size); //分配packet的数据
-
-//    av_dump_format(pFormatCtx, 0, file_path, 0); //输出视频信息
+//    av_new_packet(packet, y_size); //分配packet的数据
 
     QImage image(pCodecCtx->width,pCodecCtx->height,QImage::Format_ARGB32);
     int index = 0;
     int got_picture;
     int ret = 0;
     int64_t pre_pts = 0;
-
 
     QFont font;
     font.setPixelSize(168);
@@ -420,12 +418,6 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
 
                 if (got_picture)
                 {
-//                    sws_scale(img_convert_ctx,
-//                              (uint8_t const * const *) pFrame->data,
-//                              pFrame->linesize, 0, pCodecCtx->height, pFrameRGB->data,
-//                              pFrameRGB->linesize);
-
-//                    C_LOG_INFO(QString("pFrame=%1,pFrameRGB=%2").arg(pFrame->format).arg(pFrameRGB->format));
                     if(!userYUV)
                     {
                         sws_scale(img_convert_ctx,
@@ -467,7 +459,7 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
                         for(int i = 0; i < 4;++i)
                         {
                             format.strides[i] = pFrame->linesize[i];
-                            C_LOG_INFO(QString("pFrame->linesize[%1]=%2").arg(i).arg(pFrame->linesize[i]));
+//                            C_LOG_INFO(QString("pFrame->linesize[%1]=%2").arg(i).arg(pFrame->linesize[i]));
                         }
                         for(int i = 0 ; i < ysize; ++i)
                         {
@@ -478,7 +470,7 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
                                 out_buffer[ysize + ysize / 4 + i] =  pFrame->data[2][i];
                             }
                         }
-                        C_LOG_INFO(QString("ssindex=%1,numBytes=%2").arg(index).arg(numBytes));
+//                        C_LOG_INFO(QString("ssindex=%1,numBytes=%2").arg(index).arg(numBytes));
                         format.pixel_format = AVE::PIXEL_FORMAT_I420;
                         QDateTime datetime = QDateTime::currentDateTime();
                         m_device->callback_->OnIncomingCapturedData((char*)out_buffer, numBytes,
@@ -489,25 +481,21 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
                 ms = ses - pre_pts;
                 pre_pts = ses;
 
-//                av_free_packet(packet);
-//                packet = (AVPacket *) malloc(sizeof(AVPacket)); //分配一个packet
-//                    av_new_packet(packet, y_size);
-
-//                av_frame_free(&pFrame);
-//                pFrame = av_frame_alloc();
-                int dSec = qAbs(QTime::currentTime().msecsTo(sTime));
-//                C_LOG_INFO(QString("pts=%1,ses=%2,ms=%3,dSec=%4").arg(packet->pts).arg(ses).arg(ms).arg(dSec));
-                if(ms > dSec)
-                {
-                    ms -= dSec;
-                }
-                else
-                {
-//                    C_LOG_INFO("GGGGGGGGGGGGGGGGGGGGGGGG");
-                    ms = 1;
-                }
+                av_frame_free(&pFrame);
+                pFrame = av_frame_alloc();
             }
+            av_free_packet(packet);
 
+            int dSec = qAbs(QTime::currentTime().msecsTo(sTime));
+//                C_LOG_INFO(QString("pts=%1,ses=%2,ms=%3,dSec=%4").arg(packet->pts).arg(ses).arg(ms).arg(dSec));
+            if(ms > dSec)
+            {
+                ms -= dSec;
+            }
+            else
+            {
+                ms = 1;
+            }
             msleep(ms);
         }
         else
@@ -517,8 +505,9 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
     }
     av_free_packet(packet);
     av_free(out_buffer);
-//    av_free(out_buffer2);
-    av_free(pFrameRGB);
+    av_frame_free(&pFrameRGB);
+    av_frame_free(&pFrame);
+
     avcodec_close(pCodecCtx);
     avformat_close_input(&pFormatCtx);
 }

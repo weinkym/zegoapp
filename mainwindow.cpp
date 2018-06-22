@@ -482,7 +482,7 @@ void MainWindow::appendDebugInfo(const QString &info)
         s_count = 0;
         ui->textEdit->clear();
     }
-//    ui->textEdit->append(info);
+    ui->textEdit->append(info);
 }
 
 void MainWindow::on_pushButtonSend_clicked()
