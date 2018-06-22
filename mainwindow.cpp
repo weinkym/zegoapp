@@ -119,6 +119,11 @@ bool MainWindow::initSDK()
     C_VALUE_LOG_INFO("LIVEROOM::SetIMCallback");
     C_VALUE_LOG_INFO(ret);
 
+
+    LIVEROOM::MuteAux(true);
+    LIVEROOM::SetAuxVolume(50);
+
+
     LIVEROOM::SetDeviceStateCallback(m_pAVSignal);
     ret = LIVEROOM::InitSDK(g_dwAppID2, g_bufSignKey_Udp, 32);
     C_VALUE_LOG_INFO(ret);

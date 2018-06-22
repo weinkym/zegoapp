@@ -30,11 +30,14 @@ extern "C"
 }
 
 struct LJVideoData{
-    LJVideoData():pFormatCtx(NULL),pCodecCtx(NULL),pCodec(NULL),videoStream(-1){};
+    LJVideoData():pFormatCtx(NULL),pCodecCtxA(NULL),pCodecCtxV(NULL),pCodecA(NULL),pCodecV(NULL),videoStream(-1),audioStream(-1){};
     AVFormatContext *pFormatCtx;
-    AVCodecContext *pCodecCtx;
-    AVCodec *pCodec;
+    AVCodecContext *pCodecCtxA;
+    AVCodecContext *pCodecCtxV;
+    AVCodec *pCodecA;
+    AVCodec *pCodecV;
     int videoStream;
+    int audioStream;
 };
 
 class VideoCaptureDeviceGlue;

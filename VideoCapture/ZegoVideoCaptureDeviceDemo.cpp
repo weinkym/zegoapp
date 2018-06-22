@@ -182,6 +182,7 @@ void LJIncomingCapturedDataThread::initVideo()
     }
     C_LOG_INFO("TTTTTTTTTT");
 
+    int audioStream = -1;
     int videoStream = -1;
     //循环查找视频中包含的流信息，直到找到视频类型的流
     //便将其记录下来 保存到videoStream变量中
@@ -192,6 +193,10 @@ void LJIncomingCapturedDataThread::initVideo()
         {
             videoStream = i;
         }
+        if (pFormatCtx->streams[i]->codec->codec_type == AVMEDIA_TYPE_AUDIO)
+        {
+            audioStream = i;
+        }
     }
     if (videoStream == -1)
     {
@@ -200,23 +205,43 @@ void LJIncomingCapturedDataThread::initVideo()
     }
     C_LOG_INFO(QString("TTTTTTTTTTvideoStreamIndex=%1").arg(videoStream));
     //查找解码器
-    AVCodecContext *pCodecCtx = pFormatCtx->streams[videoStream]->codec;
-    AVCodec *pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
-    if (pCodec == NULL)
+    AVCodecContext *pCodecCtxV = pFormatCtx->streams[videoStream]->codec;
+    AVCodec *pCodecV = avcodec_find_decoder(pCodecCtxV->codec_id);
+    if (pCodecV == NULL)
     {
         C_LOG_INFO(QString("pCodec is null"));
         return;
     }
     //打开解码器
-    if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0)
+    if (avcodec_open2(pCodecCtxV, pCodecV, NULL) < 0)
     {
         C_LOG_INFO(QString("avcodec_open2"));
         return;
     }
-    this->m_videoData.pCodec = pCodec;
-    this->m_videoData.pCodecCtx = pCodecCtx;
+    if(audioStream != -1)
+    {
+        //查找解码器
+        AVCodecContext *pCodecCtxA = pFormatCtx->streams[audioStream]->codec;
+        AVCodec *pCodecA = avcodec_find_decoder(pCodecCtxA->codec_id);
+        if (pCodecA == NULL)
+        {
+            C_LOG_INFO(QString("pCodec is null"));
+            return;
+        }
+        //打开解码器
+        if (avcodec_open2(pCodecCtxA, pCodecA, NULL) < 0)
+        {
+            C_LOG_INFO(QString("avcodec_open2"));
+            return;
+        }
+        this->m_videoData.pCodecA = pCodecA;
+        this->m_videoData.pCodecCtxA = pCodecCtxA;
+    }
+    this->m_videoData.pCodecV = pCodecV;
+    this->m_videoData.pCodecCtxV = pCodecCtxV;
     this->m_videoData.pFormatCtx = pFormatCtx;
     this->m_videoData.videoStream = videoStream;
+    this->m_videoData.audioStream = audioStream;
     C_LOG_INFO(QString("init is ok"));
 }
 
@@ -333,26 +358,31 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
     AVFrame *pFrame = av_frame_alloc();
     AVFrame *pFrameRGB = av_frame_alloc();
     AVFormatContext *pFormatCtx = m_videoData.pFormatCtx;
-    AVCodec *pCodec = m_videoData.pCodec;
-    AVCodecContext *pCodecCtx = m_videoData.pCodecCtx;
+    AVCodec *pCodecA = m_videoData.pCodecA;
+    AVCodec *pCodecV = m_videoData.pCodecV;
+    AVCodecContext *pCodecCtxV = m_videoData.pCodecCtxV;
+    AVCodecContext *pCodecCtxA = m_videoData.pCodecCtxA;
     int videoStream = m_videoData.videoStream;
+    int audioStream = m_videoData.audioStream;
+    C_VALUE_LOG_INFO(videoStream);
+    C_VALUE_LOG_INFO(audioStream);
     C_LOG_INFO(QString("TTTTTTTTTT,%1,%2,%3,%4,%5,%6")
-                .arg(pCodecCtx->width)
-                .arg(pCodecCtx->height)
-                .arg(pCodecCtx->pix_fmt)
-                .arg(pCodecCtx->width)
-                .arg(pCodecCtx->width)
-                .arg(pCodecCtx->height));
+                .arg(pCodecCtxV->width)
+                .arg(pCodecCtxV->height)
+                .arg(pCodecCtxV->pix_fmt)
+                .arg(pCodecCtxV->width)
+                .arg(pCodecCtxV->width)
+                .arg(pCodecCtxV->height));
 
 
 
 
-    static struct SwsContext *img_convert_ctx = sws_getContext(pCodecCtx->width, pCodecCtx->height,
-                                     pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height,
+    static struct SwsContext *img_convert_ctx = sws_getContext(pCodecCtxV->width, pCodecCtxV->height,
+                                     pCodecCtxV->pix_fmt, pCodecCtxV->width, pCodecCtxV->height,
                                      AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
 
 
-    int numBytes = avpicture_get_size(userYUV ? pCodecCtx->pix_fmt:AV_PIX_FMT_RGB24, pCodecCtx->width,pCodecCtx->height);
+    int numBytes = avpicture_get_size(userYUV ? pCodecCtxV->pix_fmt:AV_PIX_FMT_RGB24, pCodecCtxV->width,pCodecCtxV->height);
     uint8_t *out_buffer = (uint8_t *) av_malloc(numBytes * sizeof(uint8_t));
     C_LOG_INFO(QString("TTTTTTTTTT = numBytes= %1").arg(numBytes));
 
@@ -361,19 +391,20 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
     if(!userYUV)
     {
         avpicture_fill((AVPicture *) pFrameRGB, out_buffer, AV_PIX_FMT_RGB24,
-                       pCodecCtx->width, pCodecCtx->height);
+                       pCodecCtxV->width, pCodecCtxV->height);
     }
 
-    int y_size = pCodecCtx->width * pCodecCtx->height;
+    int y_size = pCodecCtxV->width * pCodecCtxV->height;
 
     AVPacket *packet = (AVPacket *) malloc(sizeof(AVPacket)); //分配一个packet
 //    av_new_packet(packet, y_size); //分配packet的数据
 
-    QImage image(pCodecCtx->width,pCodecCtx->height,QImage::Format_ARGB32);
+    QImage image(pCodecCtxV->width,pCodecCtxV->height,QImage::Format_ARGB32);
     int index = 0;
     int got_picture;
     int ret = 0;
-    int64_t pre_pts = 0;
+    int64_t pre_pts_a = 0;
+    int64_t pre_pts_v = 0;
 
     QFont font;
     font.setPixelSize(168);
@@ -382,7 +413,7 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
     QTime preTime = preDateTime.time();
     QString text = preTime.toString("hh:mm:ss:zzz");
     QRect boundingRect = fontMetrics.boundingRect(text);
-    QSize imageSize(pCodecCtx->width,pCodecCtx->height);
+    QSize imageSize(pCodecCtxV->width,pCodecCtxV->height);
     QSize drawSize(boundingRect.width() + 10,boundingRect.height() + 10);
     QRect bgRect((imageSize.width() - drawSize.width()) / 2,(imageSize.height() - drawSize.height())/2,
                    drawSize.width(),drawSize.height());
@@ -401,14 +432,15 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
             if (av_read_frame(pFormatCtx, packet) < 0)
             {
                 av_seek_frame(pFormatCtx,0,0,0);
-                pre_pts = 0;
+                pre_pts_a = 0;
+                pre_pts_v = 0;
                 continue;
             }
             int64_t ms = 10;
             QTime sTime = QTime::currentTime();
             if (packet->stream_index == videoStream)
             {
-                ret = avcodec_decode_video2(pCodecCtx, pFrame, &got_picture,packet);
+                ret = avcodec_decode_video2(pCodecCtxV, pFrame, &got_picture,packet);
 
                 if (ret < 0)
                 {
@@ -422,9 +454,9 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
                     {
                         sws_scale(img_convert_ctx,
                                   (uint8_t const * const *) pFrame->data,
-                                  pFrame->linesize, 0, pCodecCtx->height, pFrameRGB->data,
+                                  pFrame->linesize, 0, pCodecCtxV->height, pFrameRGB->data,
                                   pFrameRGB->linesize);
-                        SaveFrame(image,pFrameRGB, pCodecCtx->width,pCodecCtx->height,index++); //保存图片
+                        SaveFrame(image,pFrameRGB, pCodecCtxV->width,pCodecCtxV->height,index++); //保存图片
 //                        C_LOG_INFO(QString("image.width()=%1,linesize=%2").arg(image.width()).arg(pFrameRGB->linesize[0]));
                         if(!image.isNull())
                         {
@@ -451,10 +483,10 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
                     }
                     else
                     {
-                        int ysize = pCodecCtx->width * pCodecCtx->height;
+                        int ysize = pCodecCtxV->width * pCodecCtxV->height;
                         AVE::VideoCaptureFormat format;
-                        format.width =  pCodecCtx->width;
-                        format.height =  pCodecCtx->height;
+                        format.width =  pCodecCtxV->width;
+                        format.height =  pCodecCtxV->height;
                         int index = 0;
                         for(int i = 0; i < 4;++i)
                         {
@@ -477,10 +509,39 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
                                                                     format, datetime.toMSecsSinceEpoch(), 1000);
                     }
                 }
-                int ses =  packet->pts * av_q2d(pCodecCtx->time_base);
-                ms = ses - pre_pts;
-                pre_pts = ses;
+                int ses =  packet->pts * av_q2d(pCodecCtxV->time_base);
+                ms = ses - pre_pts_v;
+                pre_pts_v = ses;
 
+                av_frame_free(&pFrame);
+                pFrame = av_frame_alloc();
+            }
+            else if(packet->stream_index == audioStream)
+            {
+                ret = avcodec_decode_audio4(pCodecCtxA, pFrame, &got_picture,packet);
+//                C_VALUE_LOG_INFO_BOOL(ret);
+                if(ret)
+                {
+                    AVSampleFormat f;
+                    AV_CH_LAYOUT_STEREO;
+                    int out_channerl_nb = av_get_channel_layout_nb_channels(pFrame->channel_layout);
+//                    LOGE("声道数量%d ", out_channerl_nb);
+                    C_VALUE_LOG_INFO(out_channerl_nb);
+
+                    int64_t ses =  packet->pts * av_q2d(pCodecCtxV->time_base);
+                    int64_t ds = ses - pre_pts_a;
+                    int64_t dataSize =
+                    pre_pts_a = ses;
+
+                    int out_buffer_size = av_samples_get_buffer_size(NULL, out_channerl_nb, pFrame->nb_samples,
+                                                                                     /*AV_SAMPLE_FMT_S16*/AV_SAMPLE_FMT_FLTP, 1);
+
+                    C_VALUE_LOG_INFO(out_buffer_size);
+                    C_VALUE_LOG_INFO(ds);
+                    C_LOG_INFO(QString("audio ses=%1,format=%2,sample_rate=%3,channel_layout=%4,nb_samples=%5,pts=%6,pkt_dts=%7,lines[0]=%8,lines[1]=%9")
+                               .arg(ses).arg(pFrame->format).arg(pFrame->sample_rate).arg(pFrame->channel_layout)
+                               .arg(pFrame->nb_samples).arg(pFrame->pts).arg(pFrame->pkt_dts).arg(pFrame->linesize[0]).arg(pFrame->linesize[1]));
+                }
                 av_frame_free(&pFrame);
                 pFrame = av_frame_alloc();
             }
@@ -508,6 +569,6 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
     av_frame_free(&pFrameRGB);
     av_frame_free(&pFrame);
 
-    avcodec_close(pCodecCtx);
+    avcodec_close(pCodecCtxV);
     avformat_close_input(&pFormatCtx);
 }
