@@ -48,7 +48,7 @@ private slots:
 //    void onPlayStateUpdate(int stateCode, const QString& streamId);
     void onPublishQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
 //    void onPlayQualityUpdate(const QString& streamId, int quality, double videoFPS, double videoKBS);
-//    void onAuxInput(unsigned char* pData, int* pDataLen, int pDataLenValue, int* pSampleRate, int* pNumChannels);
+    void onAuxInput(unsigned char* pData, int* pDataLen, int pDataLenValue, int* pSampleRate, int* pNumChannels);
     void onJoinLiveRequest(int seq, const QString& fromUserId, const QString& fromUserName, const QString& roomId);
 //    void onJoinLiveResponse(int result, const QString& fromUserId, const QString& fromUserName, int seq);
 //    void onAudioDeviceChanged(AV::AudioDeviceType deviceType, const QString& strDeviceId, const QString& strDeviceName, AV::DeviceState state);
@@ -70,6 +70,8 @@ private slots:
     void onPublishQualityUpdate2(const char* pszStreamID, const QVariant &value);
     void onCheckedSoundChanged(int state);
 
+    void on_pushButtonTest_clicked();
+
 protected:
     void closeEvent(QCloseEvent *event);
 
@@ -85,6 +87,8 @@ private:
 
     void appendDebugInfo(const QString &info);
 
+    void doAuxBegin();
+
 private:
     Ui::MainWindow *ui;
     QZegoAVSignal *m_pAVSignal;
@@ -96,6 +100,12 @@ private:
     StreamStatus m_streamStatus;
     QList<LJUserViewWidget*> m_viewList;
     QTimer m_timer;
+
+    //混音参数
+    unsigned char* m_pAuxData;
+    int m_nAuxDataLen;
+    int m_nAuxDataPos;
+
 };
 
 #endif // MAINWINDOW_H

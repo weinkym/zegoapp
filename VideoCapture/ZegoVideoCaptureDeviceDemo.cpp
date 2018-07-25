@@ -382,10 +382,16 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
                                      AV_PIX_FMT_RGB24, SWS_BICUBIC, NULL, NULL, NULL);
 
 
+
+    static struct SwsContext *test_img_convert_ctx = sws_getContext(pCodecCtxV->width, pCodecCtxV->height,
+                                     pCodecCtxV->pix_fmt, pCodecCtxV->width, pCodecCtxV->height,
+                                     AV_PIX_FMT_NV12, SWS_BICUBIC, NULL, NULL, NULL);
+
     int numBytes = avpicture_get_size(userYUV ? pCodecCtxV->pix_fmt:AV_PIX_FMT_RGB24, pCodecCtxV->width,pCodecCtxV->height);
     uint8_t *out_buffer = (uint8_t *) av_malloc(numBytes * sizeof(uint8_t));
     C_LOG_INFO(QString("TTTTTTTTTT = numBytes= %1").arg(numBytes));
 
+    C_LOG_INFO(QString("pCodecCtxV->pix_fmt= %1").arg(pCodecCtxV->pix_fmt));
 
 //    uint8_t *out_buffer2 = (uint8_t *) av_malloc(numBytes2 * sizeof(uint8_t));
     if(!userYUV)
@@ -450,6 +456,26 @@ void LJIncomingCapturedDataThread::sendFrame(bool userYUV)
 
                 if (got_picture)
                 {
+//                    {
+//                        AVFrame *pFrameRGB = av_frame_alloc();
+//                        int numBytes = avpicture_get_size(AV_PIX_FMT_NV12, pCodecCtxV->width,pCodecCtxV->height);
+//                        C_LOG_INFO(QString("numBytes= %1").arg(numBytes));
+//                        uint8_t *out_buffer = (uint8_t *) av_malloc(numBytes * sizeof(uint8_t));
+//                        avpicture_fill((AVPicture *) pFrameRGB, out_buffer, AV_PIX_FMT_NV12,
+//                                       pCodecCtxV->width, pCodecCtxV->height);
+
+//                        sws_scale(img_convert_ctx,
+//                                  (uint8_t const * const *) pFrame->data,
+//                                  pFrame->linesize, 0, pCodecCtxV->height, pFrameRGB->data,
+//                                  pFrameRGB->linesize);
+
+//                        for(int i = 0; i < 4;i++)
+//                        {
+//                            C_LOG_INFO(QString("TTTTV:linesize[%1]=%2").arg(i).arg(pFrameRGB->linesize[i]));
+//                        }
+//                        C_LOG_INFO(QString("pCodecCtxV->width=%1,pCodecCtxV->height=%2").arg(pCodecCtxV->width).arg(pCodecCtxV->height));
+
+//                    }
                     if(!userYUV)
                     {
                         sws_scale(img_convert_ctx,

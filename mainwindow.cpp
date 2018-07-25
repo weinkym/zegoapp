@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "clogsetting.h"
-
+#include <QFileDialog>
 
 #include "LiveRoom.h"
 #include "LiveRoom-Publisher.h"
@@ -39,6 +39,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->radioButtonHD->setChecked(true);
     updateStreamStatus(STREAM_STATUS_NORMAL);
     ui->pushButtonTimer->setText("send time");
+
+    //混音参数
+    m_pAuxData = NULL;
+    m_nAuxDataLen = 0;
+    m_nAuxDataPos = 0;
+
 }
 
 MainWindow::~MainWindow()
@@ -94,6 +100,8 @@ bool MainWindow::initSDK()
 //        connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate(QString,int,double,double)),this,SLOT(onPublishQualityUpdate(QString,int,double,double)));
         connect(m_pAVSignal,SIGNAL(sigPublishQualityUpdate2(const char*,QVariant)),
                 this,SLOT(onPublishQualityUpdate2(const char*,QVariant)));
+
+        connect(m_pAVSignal,SIGNAL(sigAuxInput(unsigned char*,int*,int,int*,int*)),this,SLOT(onAuxInput(unsigned char*,int*,int,int*,int*)));
     }
 
 
@@ -265,6 +273,33 @@ void MainWindow::onPublishQualityUpdate(const QString &streamId, int quality, do
     C_VALUE_LOG_INFO(quality);
     C_VALUE_LOG_INFO(videoFPS);
     C_VALUE_LOG_INFO(videoKBS);
+}
+
+void MainWindow::onAuxInput(unsigned char *pData, int *pDataLen, int pDataLenValue, int *pSampleRate, int *pNumChannels)
+{
+    C_VALUE_LOG_INFO(*pDataLen);
+    C_VALUE_LOG_INFO(pDataLenValue);
+    C_VALUE_LOG_INFO(*pNumChannels);
+
+    if (m_pAuxData != nullptr && (*pDataLen < m_nAuxDataLen))
+    {
+        *pSampleRate = 44100;
+        *pNumChannels = 2;
+        //长度 = 采样率 * 20 / 1000 * 位深字节数 * 通道数 位深字节数固定为2
+        //计算公式 length = 44100 * 20 / 1000 * 2 * 2 = 3528
+        *pDataLen = (*pSampleRate)* 20 / 1000 * 2 * (*pNumChannels);
+        if (m_nAuxDataPos + *pDataLen > m_nAuxDataLen)
+        {
+            m_nAuxDataPos = 0;
+        }
+        int nCopyLen = *pDataLen;
+        memcpy(pData, m_pAuxData + m_nAuxDataPos, nCopyLen);
+
+        m_nAuxDataPos += *pDataLen;
+
+
+    }
+
 }
 
 void MainWindow::onJoinLiveRequest(int seq, const QString &fromUserId, const QString &fromUserName, const QString &roomId)
@@ -490,6 +525,49 @@ void MainWindow::appendDebugInfo(const QString &info)
     ui->textEdit->append(info);
 }
 
+void MainWindow::doAuxBegin()
+{
+//    QString filePath = QFileDialog::getOpenFileName(this,
+//        tr(QString("请选择一个混音文件").toStdString().c_str()),
+//        "./Resources",
+//        tr(QString("pcm文件(*.pcm)").toStdString().c_str()));
+
+
+    QString filePath = "C:\\work\\src_miao\\zegoapp\\bin\\a.pcm";
+    if (!filePath.isEmpty())
+    {
+        FILE* fAux;
+        fAux = fopen(filePath.toStdString().c_str(), "rb");
+
+        if (fAux == NULL)
+        {
+            QMessageBox::warning(this, tr("警告"), tr("文件内容错误: %1").arg(filePath));
+            return;
+        }
+
+        fseek(fAux, 0, SEEK_END);
+        m_nAuxDataLen = ftell(fAux);
+
+        if (m_nAuxDataLen > 0)
+        {
+            m_pAuxData = new unsigned char[m_nAuxDataLen];
+            memset(m_pAuxData, 0, m_nAuxDataLen);
+        }
+
+        fseek(fAux, 0, 0);
+
+        int nReadDataLen = fread(m_pAuxData, sizeof(unsigned char), m_nAuxDataLen, fAux);
+
+        fclose(fAux);
+
+        bool ok = LIVEROOM::EnableAux(true);
+        C_VALUE_LOG_INFO_BOOL(ok);
+//         LIVEROOM::MuteAux(true);
+
+//        ui.m_bAux->setText(tr("关闭混音"));
+    }
+}
+
 void MainWindow::on_pushButtonSend_clicked()
 {
     QString text = ui->lineEditInput->text().simplified();
@@ -547,4 +625,10 @@ void MainWindow::onCheckedSoundChanged(int state)
     LIVEROOM::EnableSpeaker(ui->checkBoxSound->isChecked());
     LIVEROOM::EnableMic(ui->checkBoxMicphone->isChecked());
 
+}
+
+void MainWindow::on_pushButtonTest_clicked()
+{
+    C_LOG_FUNCTION;
+    doAuxBegin();
 }
